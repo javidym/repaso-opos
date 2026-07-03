@@ -1,0 +1,15 @@
+{
+  "name": "Repaso OPOS · Tarjetas",
+  "short_name": "Repaso OPOS",
+  "description": "Tarjetas de repaso para la oposición de Maestro de Primaria",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1726",
+  "theme_color": "#0f2d4a",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

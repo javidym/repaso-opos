@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f2d4a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Repaso OPOS">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<title>Repaso OPOS · Tarjetas</title>
+<style>
+  :root{
+    --bg:#0e1726; --bg2:#0a1120; --panel:#16233a; --panel2:#1d2f4d;
+    --line:#26374f; --ink:#eef4fb; --soft:#9db0c9; --muted:#6f819b;
+    --azul:#3d82d6; --azul-d:#2c66ac; --verde:#28b46b; --verde-d:#1e8f54;
+    --rojo:#e5484d; --naranja:#e6913c; --morado:#9b6bd6; --dorado:#e0b64a;
+    --shadow:0 18px 40px -18px rgba(0,0,0,.7);
+    --r:18px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#eef2f7; --bg2:#e3e9f1; --panel:#ffffff; --panel2:#f4f7fb;
+      --line:#dbe3ee; --ink:#132033; --soft:#4a5a71; --muted:#7c8aa0;
+      --shadow:0 16px 34px -20px rgba(20,40,70,.45);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;color:var(--ink);
+    background:radial-gradient(120% 90% at 50% -10%, var(--bg2) 0%, var(--bg) 60%) fixed;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Roboto,Arial,sans-serif;
+    line-height:1.5;overscroll-behavior:none;
+  }
+  .app{max-width:760px;margin:0 auto;min-height:100%;
+    padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 24px);
+    display:flex;flex-direction:column}
+  .hidden{display:none!important}
+  button{font-family:inherit;cursor:pointer}
+
+  /* ---------- HOME ---------- */
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .brand .logo{width:44px;height:44px;border-radius:13px;flex:none;
+    background:linear-gradient(135deg,var(--azul),var(--morado));
+    display:grid;place-items:center;font-size:23px;box-shadow:var(--shadow)}
+  .brand h1{font-size:21px;margin:0;letter-spacing:-.3px}
+  .brand p{margin:1px 0 0;font-size:12.5px;color:var(--soft)}
+
+  .sectitle{font-size:12px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;
+    color:var(--muted);margin:20px 2px 9px;display:flex;justify-content:space-between;align-items:center}
+  .sectitle .selall{font-size:11.5px;color:var(--azul);font-weight:700;cursor:pointer;letter-spacing:.2px;text-transform:none}
+
+  .blk{margin-bottom:6px}
+  .blk-h{font-size:12.5px;font-weight:800;color:var(--soft);margin:14px 4px 8px;
+    display:flex;align-items:center;gap:8px}
+  .blk-h .ln{flex:1;height:1px;background:var(--line)}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:460px){.grid{grid-template-columns:1fr}}
+  .tcard{position:relative;text-align:left;background:var(--panel);border:1.5px solid var(--line);
+    border-radius:15px;padding:13px 13px 12px;transition:transform .12s,border-color .15s,background .15s;
+    color:var(--ink);display:flex;flex-direction:column;gap:3px;min-height:78px}
+  .tcard:active{transform:scale(.98)}
+  .tcard .num{font-size:11px;font-weight:800;color:var(--azul);letter-spacing:.5px}
+  .tcard .tt{font-size:14px;font-weight:700;line-height:1.28}
+  .tcard .cnt{font-size:11px;color:var(--muted);margin-top:auto}
+  .tcard .chk{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;
+    border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:#fff;transition:.15s}
+  .tcard.sel{border-color:var(--verde);background:var(--panel2)}
+  .tcard.sel .chk{background:var(--verde);border-color:var(--verde)}
+
+  /* ---------- config bar / start ---------- */
+  .cfg{margin-top:22px;background:var(--panel);border:1.5px solid var(--line);border-radius:var(--r);
+    padding:16px;box-shadow:var(--shadow)}
+  .cfg h3{margin:0 0 3px;font-size:15px}
+  .cfg .hint{font-size:12.5px;color:var(--soft);margin:0 0 13px}
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .seg button{flex:1;min-width:64px;border:1.5px solid var(--line);background:var(--panel2);color:var(--ink);
+    font-weight:800;font-size:15px;border-radius:12px;padding:12px 8px;transition:.13s}
+  .seg button.on{background:var(--azul);border-color:var(--azul);color:#fff}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+  .toggle-row .lab{font-size:13.5px}
+  .toggle-row .lab small{display:block;color:var(--muted);font-size:11.5px;font-weight:500}
+  .switch{position:relative;width:50px;height:29px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:var(--line);border-radius:30px;transition:.2s}
+  .slider:before{content:"";position:absolute;height:23px;width:23px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+  .switch input:checked + .slider{background:var(--verde)}
+  .switch input:checked + .slider:before{transform:translateX(21px)}
+
+  .go{margin-top:16px;width:100%;border:0;border-radius:14px;padding:16px;font-size:17px;font-weight:800;
+    color:#fff;background:linear-gradient(135deg,var(--verde),var(--verde-d));box-shadow:var(--shadow)}
+  .go:disabled{background:var(--line);color:var(--muted);box-shadow:none}
+  .selinfo{text-align:center;font-size:12.5px;color:var(--soft);margin-top:9px;min-height:16px}
+
+  /* ---------- STUDY ---------- */
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .iconbtn{width:40px;height:40px;flex:none;border-radius:12px;border:1.5px solid var(--line);
+    background:var(--panel);color:var(--ink);font-size:18px;display:grid;place-items:center}
+  .progwrap{flex:1}
+  .progtop{display:flex;justify-content:space-between;font-size:12px;color:var(--soft);margin-bottom:5px}
+  .progtop b{color:var(--ink)}
+  .progbar{height:7px;border-radius:6px;background:var(--line);overflow:hidden}
+  .progbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--azul),var(--verde));transition:width .3s}
+
+  .temachip{display:inline-block;font-size:11px;font-weight:800;color:var(--azul);
+    background:color-mix(in srgb,var(--azul) 16%,transparent);border-radius:20px;padding:4px 11px;
+    letter-spacing:.3px;margin-bottom:10px}
+
+  .scene{perspective:1600px;flex:1;display:flex;min-height:340px}
+  .card3d{position:relative;width:100%;transition:transform .55s cubic-bezier(.4,.2,.2,1);
+    transform-style:preserve-3d}
+  .card3d.flip{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border-radius:22px;border:1.5px solid var(--line);background:var(--panel);box-shadow:var(--shadow);
+    padding:22px;display:flex;flex-direction:column;overflow:auto}
+  .face .flabel{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between}
+  .front .qtext{font-size:20px;font-weight:600;line-height:1.4;flex:1;display:flex;align-items:center}
+  @media(min-width:620px){.front .qtext{font-size:23px}}
+  .back{transform:rotateY(180deg);background:linear-gradient(160deg,var(--panel2),var(--panel))}
+  .back .flabel{color:var(--verde)}
+  .back .atext{font-size:16.5px;line-height:1.55}
+  .tap-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:10px;min-height:16px}
+  .tap-hint.pulse{animation:pulseh 1.8s infinite}
+  @keyframes pulseh{50%{opacity:.4}}
+
+  /* opciones test */
+  .opts{margin-top:14px;display:flex;flex-direction:column;gap:9px}
+  .opt{display:flex;gap:11px;align-items:flex-start;text-align:left;width:100%;
+    border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:13px;
+    padding:13px 13px;font-size:14.5px;line-height:1.4;transition:.13s}
+  .opt .k{flex:none;width:24px;height:24px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);
+    display:grid;place-items:center;font-weight:800;font-size:12.5px;color:var(--soft)}
+  .opt:active{transform:scale(.99)}
+  .opt.correct{border-color:var(--verde);background:color-mix(in srgb,var(--verde) 15%,var(--panel))}
+  .opt.correct .k{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .opt.wrong{border-color:var(--rojo);background:color-mix(in srgb,var(--rojo) 13%,var(--panel))}
+  .opt.wrong .k{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+  .opt.lock{pointer-events:none}
+  .opt.dim{opacity:.55}
+
+  /* controles inferiores */
+  .studyfoot{margin-top:14px}
+  .showtest{width:100%;border:1.5px dashed var(--azul);background:transparent;color:var(--azul);
+    font-weight:800;font-size:14px;border-radius:13px;padding:13px;margin-bottom:10px}
+  .nav{display:flex;gap:10px}
+  .nav button{flex:1;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);
+    font-weight:800;font-size:15px;border-radius:13px;padding:14px}
+  .nav .know{background:color-mix(in srgb,var(--verde) 18%,var(--panel));border-color:var(--verde-d);color:var(--verde)}
+  .nav .dunno{background:color-mix(in srgb,var(--naranja) 16%,var(--panel));border-color:var(--naranja);color:var(--naranja)}
+  .nav button:disabled{opacity:.4}
+
+  /* ---------- RESULTS ---------- */
+  .result{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--r);padding:26px 20px;
+    text-align:center;box-shadow:var(--shadow);margin-top:20px}
+  .result .big{font-size:52px;font-weight:800;line-height:1;margin:6px 0}
+  .result .ring{width:132px;height:132px;margin:6px auto 14px;border-radius:50%;display:grid;place-items:center;
+    background:conic-gradient(var(--verde) var(--pct,0%), var(--line) 0)}
+  .result .ring div{width:104px;height:104px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-size:27px;font-weight:800}
+  .stats{display:flex;gap:10px;margin:18px 0 6px}
+  .stat{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:12px 8px}
+  .stat b{display:block;font-size:22px}
+  .stat span{font-size:11px;color:var(--soft)}
+  .rbtns{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+  .rbtns button{border:0;border-radius:13px;padding:15px;font-size:15px;font-weight:800;color:#fff}
+  .rbtns .again{background:linear-gradient(135deg,var(--azul),var(--azul-d))}
+  .rbtns .home{background:var(--panel2);color:var(--ink);border:1.5px solid var(--line)}
+
+  .footnote{text-align:center;font-size:11px;color:var(--muted);margin-top:26px}
+  .empty{background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--soft);font-size:14px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ HOME ============ -->
+  <section id="home">
+    <div class="brand">
+      <div class="logo">🃏</div>
+      <div>
+        <h1>Repaso OPOS</h1>
+        <p>Tarjetas de repaso · Maestro de Primaria</p>
+      </div>
+    </div>
+
+    <div class="sectitle">
+      <span>1 · Elige tema(s)</span>
+      <span class="selall" id="selAll">Seleccionar todos</span>
+    </div>
+    <div id="temaList"></div>
+
+    <div class="cfg">
+      <h3>2 · Configura el repaso</h3>
+      <p class="hint">¿Cuántas tarjetas quieres esta sesión?</p>
+      <div class="seg" id="sizeSeg">
+        <button data-n="15">15</button>
+        <button data-n="30" class="on">30</button>
+        <button data-n="50">50</button>
+        <button data-n="0">Todas</button>
+      </div>
+
+      <div class="toggle-row">
+        <div class="lab">Mostrar opciones tipo test
+          <small>Botón para ver 4 respuestas en cada tarjeta</small></div>
+        <label class="switch"><input type="checkbox" id="tgTest" checked><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="lab">Barajar tarjetas
+          <small>Orden aleatorio cada sesión</small></div>
+        <label class="switch"><input type="checkbox" id="tgShuffle" checked><span class="slider"></span></label>
+      </div>
+
+      <button class="go" id="startBtn" disabled>Empezar repaso</button>
+      <div class="selinfo" id="selInfo">Selecciona al menos un tema</div>
+    </div>
+
+    <div class="footnote">Toca la tarjeta para girarla y ver la respuesta.</div>
+  </section>
+
+  <!-- ============ STUDY ============ -->
+  <section id="study" class="hidden">
+    <div class="topbar">
+      <button class="iconbtn" id="exitBtn" aria-label="Salir">✕</button>
+      <div class="progwrap">
+        <div class="progtop"><span id="pgLabel">Tarjeta 1</span><span><b id="pgCur">1</b>/<span id="pgTot">30</span></span></div>
+        <div class="progbar"><i id="pgBar"></i></div>
+      </div>
+    </div>
+
+    <span class="temachip" id="temaChip">Tema</span>
+
+    <div class="scene">
+      <div class="card3d" id="card3d">
+        <div class="face front">
+          <div class="flabel"><span>Pregunta</span><span id="qIdx"></span></div>
+          <div class="qtext" id="qText"></div>
+        </div>
+        <div class="face back">
+          <div class="flabel"><span>Respuesta</span></div>
+          <div class="atext" id="aText"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tap-hint pulse" id="tapHint">Toca la tarjeta para ver la respuesta</div>
+
+    <div id="optsWrap" class="opts hidden"></div>
+
+    <div class="studyfoot">
+      <button class="showtest" id="showTest">📝 Ver opciones (test)</button>
+      <div class="nav">
+        <button id="prevBtn">◀</button>
+        <button class="dunno" id="dunnoBtn">No la sabía</button>
+        <button class="know" id="knowBtn">La sabía ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="results" class="hidden">
+    <div class="brand">
+      <div class="logo">🏁</div>
+      <div><h1>Sesión terminada</h1><p id="resTemas">—</p></div>
+    </div>
+    <div class="result">
+      <div class="ring" id="ring"><div id="ringPct">—</div></div>
+      <p style="margin:0;color:var(--soft);font-size:13px" id="resSub">Autoevaluación de la sesión</p>
+      <div class="stats">
+        <div class="stat"><b id="stKnow" style="color:var(--verde)">0</b><span>La sabía</span></div>
+        <div class="stat"><b id="stDunno" style="color:var(--naranja)">0</b><span>No la sabía</span></div>
+        <div class="stat"><b id="stTest" style="color:var(--azul)">0</b><span>Test acertado</span></div>
+      </div>
+      <div class="rbtns">
+        <button class="again" id="againDunno">🔁 Repasar las falladas</button>
+        <button class="again" id="againAll" style="background:linear-gradient(135deg,var(--morado),#7d4fc0)">Nueva sesión (mismos temas)</button>
+        <button class="home" id="toHome">← Cambiar de temas</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="data/preguntas.js"></script>
+<script src="app.js"></script>
+<script>
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
