@@ -71,6 +71,11 @@
     border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:#fff;transition:.15s}
   .tcard.sel{border-color:var(--verde);background:var(--panel2)}
   .tcard.sel .chk{background:var(--verde);border-color:var(--verde)}
+  .tcard .prog{font-size:10.5px;color:var(--muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+  .tcard .prog b{font-weight:800}
+  .tcard .prog .d{color:var(--verde)} .tcard .prog .f{color:var(--rojo)} .tcard .prog .n{color:var(--muted)}
+  .tcard .pbar{height:4px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:6px}
+  .tcard .pbar i{display:block;height:100%;width:0;background:var(--verde)}
 
   /* ---------- config bar / start ---------- */
   .cfg{margin-top:22px;background:var(--panel);border:1.5px solid var(--line);border-radius:var(--r);
@@ -94,7 +99,14 @@
   .go{margin-top:16px;width:100%;border:0;border-radius:14px;padding:16px;font-size:17px;font-weight:800;
     color:#fff;background:linear-gradient(135deg,var(--verde),var(--verde-d));box-shadow:var(--shadow)}
   .go:disabled{background:var(--line);color:var(--muted);box-shadow:none}
+  .go.sec{margin-top:10px;background:linear-gradient(135deg,var(--rojo),#b83b3f);font-size:15px;padding:13px}
+  .go.sec:disabled{background:var(--line);color:var(--muted);box-shadow:none}
   .selinfo{text-align:center;font-size:12.5px;color:var(--soft);margin-top:9px;min-height:16px}
+  .progsum{margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;font-size:12.5px;color:var(--soft);display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+  .progsum b{color:var(--ink)}
+  .progsum .d b{color:var(--verde)} .progsum .f b{color:var(--rojo)}
+  .reset{display:block;text-align:center;font-size:11.5px;color:var(--muted);margin-top:10px;cursor:pointer;text-decoration:underline}
 
   /* ---------- STUDY ---------- */
   .topbar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
@@ -212,12 +224,20 @@
           <small>Orden aleatorio cada sesión</small></div>
         <label class="switch"><input type="checkbox" id="tgShuffle" checked><span class="slider"></span></label>
       </div>
+      <div class="toggle-row">
+        <div class="lab">Repaso inteligente
+          <small>Prioriza las falladas y las que llevas sin ver</small></div>
+        <label class="switch"><input type="checkbox" id="tgSmart" checked><span class="slider"></span></label>
+      </div>
 
       <button class="go" id="startBtn" disabled>Empezar repaso</button>
+      <button class="go sec hidden" id="failBtn">🔴 Repasar solo mis falladas</button>
       <div class="selinfo" id="selInfo">Selecciona al menos un tema</div>
+      <div class="progsum hidden" id="progSum"></div>
+      <span class="reset hidden" id="resetProg">Reiniciar mi progreso</span>
     </div>
 
-    <div class="footnote">Toca la tarjeta para girarla y ver la respuesta.</div>
+    <div class="footnote">Toca la tarjeta para girarla y ver la respuesta. Tu progreso se guarda en este dispositivo.</div>
   </section>
 
   <!-- ============ STUDY ============ -->

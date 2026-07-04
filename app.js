@@ -1,6 +1,7 @@
 /* ==========================================================================
    Repaso OPOS · lógica de la app de tarjetas
    Depende de data/preguntas.js -> window.TEMAS, window.PREGUNTAS
+   Guarda progreso persistente por pregunta en localStorage.
    ========================================================================== */
 (function () {
   'use strict';
@@ -9,18 +10,24 @@
   var PREGUNTAS = window.PREGUNTAS || [];
   var LETRAS = ['A', 'B', 'C', 'D', 'E'];
 
-  // ---- estado ----
+  // ---- estado de sesión ----
   var st = {
     seleccion: new Set(),   // números de tema seleccionados
     size: 30,               // 0 = todas
     modoTest: true,
     barajar: true,
-    mazo: [],               // preguntas de la sesión
-    i: 0,                   // índice actual
+    smart: true,            // repaso inteligente (prioriza falladas/nuevas)
+    mazo: [],
+    i: 0,
     volteada: false,
-    respondidas: {},        // id -> índice elegido
+    respondidas: {},        // id -> índice elegido (test)
     sabidas: {},            // id -> true/false (autoeval)
+    committed: {},          // id -> true (ya contabilizado en stats esta sesión)
   };
+
+  // ---- progreso persistente por pregunta ----
+  // stats[id] = { ok, fail, seen, t (last timestamp ms), lo (last outcome bool) }
+  var stats = {};
 
   // ---- helpers DOM ----
   function $(id) { return document.getElementById(id); }
@@ -40,13 +47,14 @@
     return c;
   }
 
-  // ---- persistencia ligera ----
+  // ---- persistencia ----
   var LS = 'repasoOpos.cfg';
+  var LS_STATS = 'repasoOpos.stats';
   function saveCfg() {
     try {
       localStorage.setItem(LS, JSON.stringify({
         sel: Array.from(st.seleccion), size: st.size,
-        test: st.modoTest, shuffle: st.barajar
+        test: st.modoTest, shuffle: st.barajar, smart: st.smart
       }));
     } catch (e) {}
   }
@@ -57,14 +65,63 @@
       if (typeof c.size === 'number') st.size = c.size;
       if (typeof c.test === 'boolean') st.modoTest = c.test;
       if (typeof c.shuffle === 'boolean') st.barajar = c.shuffle;
+      if (typeof c.smart === 'boolean') st.smart = c.smart;
     } catch (e) {}
+  }
+  function loadStats() {
+    try { stats = JSON.parse(localStorage.getItem(LS_STATS) || '{}') || {}; }
+    catch (e) { stats = {}; }
+  }
+  function saveStats() {
+    try { localStorage.setItem(LS_STATS, JSON.stringify(stats)); } catch (e) {}
+  }
+  function getStat(id) { return stats[id] || { ok: 0, fail: 0, seen: 0, t: 0, lo: undefined }; }
+
+  // estado de una pregunta: 'fal' (fallada), 'dom' (dominada), 'nue' (sin ver/sin evaluar)
+  function estadoDe(id) {
+    var s = stats[id];
+    if (!s || s.lo === undefined) return 'nue';
+    return s.lo ? 'dom' : 'fal';
+  }
+
+  /* ======================= PROGRESO ======================= */
+  // Contabiliza el resultado de una tarjeta (una vez por sesión).
+  function commitCard(id) {
+    if (!id || st.committed[id]) return;
+    st.committed[id] = true;
+    var q = null;
+    for (var k = 0; k < st.mazo.length; k++) if (st.mazo[k].id === id) { q = st.mazo[k]; break; }
+    var s = stats[id] || { ok: 0, fail: 0, seen: 0, t: 0, lo: undefined };
+    s.seen = (s.seen || 0) + 1;
+    s.t = Date.now();
+    // resultado: autoevaluación tiene prioridad; si no, el test; si no, solo "visto"
+    var outcome = null;
+    if (st.sabidas.hasOwnProperty(id)) outcome = st.sabidas[id];
+    else if (q && st.respondidas.hasOwnProperty(id)) outcome = (st.respondidas[id] === q.correcta);
+    if (outcome === true) { s.ok = (s.ok || 0) + 1; s.lo = true; }
+    else if (outcome === false) { s.fail = (s.fail || 0) + 1; s.lo = false; }
+    stats[id] = s;
+    saveStats();
+  }
+
+  // Estadísticas agregadas por tema para el pool seleccionado.
+  function statsPorTema() {
+    var m = {};
+    for (var k = 0; k < PREGUNTAS.length; k++) {
+      var q = PREGUNTAS[k];
+      if (!m[q.tema]) m[q.tema] = { total: 0, dom: 0, fal: 0, nue: 0 };
+      m[q.tema].total++;
+      var e = estadoDe(q.id);
+      m[q.tema][e]++;
+    }
+    return m;
   }
 
   /* ======================= HOME ======================= */
   function renderTemas() {
     var wrap = $('temaList');
     wrap.innerHTML = '';
-    // agrupar por bloque conservando el orden de aparición
+    var porTema = statsPorTema();
     var orden = [], grupos = {};
     TEMAS.forEach(function (t) {
       var b = t.bloque || 'General';
@@ -81,6 +138,8 @@
       grid.className = 'grid';
       grupos[b].forEach(function (t) {
         var n = countTema(t.n);
+        var s = porTema[t.n] || { total: n, dom: 0, fal: 0, nue: n };
+        var pct = s.total ? Math.round(s.dom / s.total * 100) : 0;
         var card = document.createElement('button');
         card.className = 'tcard' + (st.seleccion.has(t.n) ? ' sel' : '');
         card.type = 'button';
@@ -89,7 +148,13 @@
           '<span class="chk">✓</span>' +
           '<span class="num">TEMA ' + t.n + '</span>' +
           '<span class="tt">' + t.corto + '</span>' +
-          '<span class="cnt">' + n + ' preguntas</span>';
+          '<span class="cnt">' + n + ' preguntas</span>' +
+          '<span class="prog">' +
+            '<span class="d">🟢<b> ' + s.dom + '</b></span>' +
+            '<span class="f">🔴<b> ' + s.fal + '</b></span>' +
+            '<span class="n">⚪<b> ' + s.nue + '</b></span>' +
+          '</span>' +
+          '<span class="pbar"><i style="width:' + pct + '%"></i></span>';
         if (!n) { card.style.opacity = '.45'; card.disabled = true; }
         card.addEventListener('click', function () {
           if (st.seleccion.has(t.n)) st.seleccion.delete(t.n);
@@ -112,24 +177,44 @@
     }
     return pool;
   }
+  function poolFalladas() {
+    return poolSeleccion().filter(function (q) { return estadoDe(q.id) === 'fal'; });
+  }
 
   function updateSelInfo() {
     var pool = poolSeleccion();
-    var btn = $('startBtn'), info = $('selInfo');
+    var btn = $('startBtn'), info = $('selInfo'), fbtn = $('failBtn'), psum = $('progSum'), reset = $('resetProg');
     if (!st.seleccion.size) {
       btn.disabled = true;
       info.textContent = 'Selecciona al menos un tema';
-    } else {
-      btn.disabled = false;
-      var n = st.seleccion.size;
-      var toma = st.size === 0 ? pool.length : Math.min(st.size, pool.length);
-      info.textContent = n + (n === 1 ? ' tema' : ' temas') + ' · ' + pool.length +
-        ' preguntas disponibles · esta sesión: ' + toma;
+      hide('failBtn'); hide('progSum'); hide('resetProg');
+      return;
     }
+    btn.disabled = false;
+    var n = st.seleccion.size;
+    var toma = st.size === 0 ? pool.length : Math.min(st.size, pool.length);
+    info.textContent = n + (n === 1 ? ' tema' : ' temas') + ' · ' + pool.length +
+      ' preguntas · esta sesión: ' + toma;
+
+    // resumen de progreso del pool seleccionado
+    var dom = 0, fal = 0, nue = 0;
+    pool.forEach(function (q) { var e = estadoDe(q.id); if (e === 'dom') dom++; else if (e === 'fal') fal++; else nue++; });
+    psum.innerHTML = '<span class="d">🟢 <b>' + dom + '</b> dominadas</span>' +
+      '<span class="f">🔴 <b>' + fal + '</b> falladas</span>' +
+      '<span>⚪ <b>' + nue + '</b> sin ver</span>';
+    show('progSum');
+
+    // botón de falladas
+    if (fal > 0) {
+      fbtn.textContent = '🔴 Repasar solo mis falladas (' + fal + ')';
+      fbtn.disabled = false; show('failBtn');
+    } else { hide('failBtn'); }
+
+    // reinicio: visible si hay algún progreso guardado
+    if (dom + fal > 0 || Object.keys(stats).length) show('resetProg'); else hide('resetProg');
   }
 
   function bindHome() {
-    // tamaño de sesión
     Array.prototype.forEach.call($('sizeSeg').children, function (b) {
       if (parseInt(b.dataset.n, 10) === st.size) {
         Array.prototype.forEach.call($('sizeSeg').children, function (x) { x.classList.remove('on'); });
@@ -142,13 +227,13 @@
         updateSelInfo(); saveCfg();
       });
     });
-    // toggles
     $('tgTest').checked = st.modoTest;
     $('tgShuffle').checked = st.barajar;
+    $('tgSmart').checked = st.smart;
     $('tgTest').addEventListener('change', function () { st.modoTest = this.checked; saveCfg(); });
     $('tgShuffle').addEventListener('change', function () { st.barajar = this.checked; saveCfg(); });
+    $('tgSmart').addEventListener('change', function () { st.smart = this.checked; saveCfg(); });
 
-    // seleccionar todos / ninguno
     $('selAll').addEventListener('click', function () {
       var disponibles = TEMAS.filter(function (t) { return countTema(t.n); }).map(function (t) { return t.n; });
       var todos = disponibles.every(function (n) { return st.seleccion.has(n); });
@@ -158,19 +243,44 @@
       saveCfg();
     });
 
-    $('startBtn').addEventListener('click', startSession);
+    $('startBtn').addEventListener('click', function () { startSession(poolSeleccion()); });
+    $('failBtn').addEventListener('click', function () {
+      var f = poolFalladas();
+      if (!f.length) { alert('No tienes preguntas falladas en los temas elegidos. ¡Bien!'); return; }
+      startSession(f);
+    });
+    $('resetProg').addEventListener('click', function () {
+      if (confirm('¿Reiniciar TODO tu progreso (aciertos y fallos de todas las preguntas)? Esto no se puede deshacer.')) {
+        stats = {}; saveStats(); renderTemas();
+      }
+    });
   }
 
   /* ======================= SESIÓN ======================= */
-  function startSession() {
-    var pool = poolSeleccion();
-    if (!pool.length) return;
-    var mazo = st.barajar ? shuffle(pool) : pool.slice();
+  // Ordena el pool según prioridad de repaso inteligente.
+  function ordenarMazo(pool) {
+    if (st.smart) {
+      var prio = { fal: 0, nue: 1, dom: 2 };
+      return pool.slice().sort(function (a, b) {
+        var pa = prio[estadoDe(a.id)], pb = prio[estadoDe(b.id)];
+        if (pa !== pb) return pa - pb;                 // falladas → nuevas → dominadas
+        var ta = getStat(a.id).t || 0, tb = getStat(b.id).t || 0;
+        if (ta !== tb) return ta - tb;                 // las que hace más que no ves, primero
+        return Math.random() - 0.5;                     // desempate variado
+      });
+    }
+    return st.barajar ? shuffle(pool) : pool.slice();
+  }
+
+  function startSession(pool) {
+    if (!pool || !pool.length) return;
+    var mazo = ordenarMazo(pool);
     if (st.size > 0) mazo = mazo.slice(0, st.size);
     st.mazo = mazo;
     st.i = 0;
     st.respondidas = {};
     st.sabidas = {};
+    st.committed = {};
     hide('home'); hide('results'); show('study');
     $('pgTot').textContent = mazo.length;
     window.scrollTo(0, 0);
@@ -187,23 +297,20 @@
     st.volteada = false;
     $('card3d').classList.remove('flip');
 
-    // progreso
     $('pgCur').textContent = st.i + 1;
     $('pgLabel').textContent = 'Tarjeta ' + (st.i + 1);
     $('pgBar').style.width = ((st.i) / st.mazo.length * 100) + '%';
 
-    // contenido
-    $('temaChip').textContent = 'TEMA ' + q.tema + ' · ' + temaTitulo(q.tema);
+    var badge = { dom: '🟢', fal: '🔴', nue: '⚪' }[estadoDe(q.id)] || '';
+    $('temaChip').textContent = badge + ' TEMA ' + q.tema + ' · ' + temaTitulo(q.tema);
     $('qText').textContent = q.q;
     $('aText').innerHTML = formatAnswer(q.a);
     $('qIdx').textContent = '#' + (st.i + 1);
 
-    // pista de girar
     var hint = $('tapHint');
     hint.textContent = 'Toca la tarjeta para ver la respuesta';
     hint.className = 'tap-hint pulse';
 
-    // opciones test
     hide('optsWrap');
     $('showTest').classList.remove('hidden');
     $('optsWrap').innerHTML = '';
@@ -211,10 +318,8 @@
       $('showTest').textContent = st.respondidas.hasOwnProperty(q.id) ? '📝 Opciones' : '📝 Ver opciones (test)';
     }
     $('showTest').style.display = (st.modoTest && q.opciones && q.opciones.length) ? '' : 'none';
-    // si ya se respondió antes, re-mostrar
     if (st.modoTest && st.respondidas.hasOwnProperty(q.id)) { buildOptions(q); revealOptions(q, st.respondidas[q.id]); }
 
-    // botones autoeval
     var saved = st.sabidas[q.id];
     $('knowBtn').classList.toggle('on', saved === true);
     $('dunnoBtn').classList.toggle('on', saved === false);
@@ -222,7 +327,6 @@
   }
 
   function formatAnswer(a) {
-    // permite saltos de línea y viñetas simples con "- "
     var safe = a.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return safe.replace(/\n/g, '<br>');
   }
@@ -286,6 +390,7 @@
 
   /* ------- navegación ------- */
   function go(dir) {
+    commitCard(st.mazo[st.i].id); // contabiliza la tarjeta actual antes de salir de ella
     var ni = st.i + dir;
     if (ni < 0) return;
     if (ni >= st.mazo.length) { finish(); return; }
@@ -312,7 +417,7 @@
       }
     });
     var evaluadas = know + dunno;
-    var pct = evaluadas ? Math.round(know / evaluadas * 100) : (total ? 0 : 0);
+    var pct = evaluadas ? Math.round(know / evaluadas * 100) : 0;
 
     hide('study'); show('results');
     $('ring').style.setProperty('--pct', pct + '%');
@@ -321,7 +426,7 @@
     $('stDunno').textContent = dunno;
     $('stTest').textContent = testTot ? (testOk + '/' + testTot) : '—';
     $('resSub').textContent = evaluadas
-      ? ('Sabías ' + know + ' de ' + evaluadas + ' tarjetas evaluadas')
+      ? ('Sabías ' + know + ' de ' + evaluadas + ' tarjetas evaluadas · progreso guardado')
       : 'No marcaste autoevaluación en esta sesión';
     var nombres = Array.from(st.seleccion).sort(function (a, b) { return a - b; })
       .map(function (n) { return 'T' + n; }).join(' · ');
@@ -336,11 +441,11 @@
     $('knowBtn').addEventListener('click', function () { mark(true); });
     $('dunnoBtn').addEventListener('click', function () { mark(false); });
     $('exitBtn').addEventListener('click', function () {
-      if (confirm('¿Salir del repaso? Se perderá el progreso de esta sesión.')) {
+      if (confirm('¿Salir del repaso? Se guardará el progreso de las tarjetas que ya has respondido.')) {
+        commitCard(st.mazo[st.i].id);
         hide('study'); show('home'); renderTemas();
       }
     });
-    // swipe horizontal para navegar
     var x0 = null;
     var scene = document.querySelector('.scene');
     scene.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
@@ -349,7 +454,6 @@
       var dx = e.changedTouches[0].clientX - x0; x0 = null;
       if (Math.abs(dx) > 70) { if (dx < 0) go(1); else go(-1); }
     }, { passive: true });
-    // teclado (para tablet con teclado / escritorio)
     document.addEventListener('keydown', function (e) {
       if ($('study').classList.contains('hidden')) return;
       if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); }
@@ -359,7 +463,7 @@
   }
 
   function bindResults() {
-    $('againAll').addEventListener('click', startSession);
+    $('againAll').addEventListener('click', function () { startSession(poolSeleccion()); });
     $('toHome').addEventListener('click', function () { hide('results'); show('home'); renderTemas(); });
     $('againDunno').addEventListener('click', function () {
       var falladas = st.mazo.filter(function (q) {
@@ -367,12 +471,7 @@
           (st.respondidas.hasOwnProperty(q.id) && st.respondidas[q.id] !== q.correcta);
       });
       if (!falladas.length) { alert('¡No fallaste ninguna! 🎉'); return; }
-      st.mazo = st.barajar ? shuffle(falladas) : falladas;
-      st.i = 0; st.respondidas = {}; st.sabidas = {};
-      hide('results'); show('study');
-      $('pgTot').textContent = st.mazo.length;
-      window.scrollTo(0, 0);
-      renderCard();
+      startSession(falladas);
     });
   }
 
@@ -382,8 +481,8 @@
       $('temaList').innerHTML = '<div class="empty">No se han cargado las preguntas.<br>Revisa <b>data/preguntas.js</b>.</div>';
       return;
     }
-    // ordenar temas por número
     TEMAS.sort(function (a, b) { return a.n - b.n; });
+    loadStats();
     loadCfg();
     bindHome();
     bindStudy();
