@@ -146,7 +146,7 @@
         card.dataset.tema = t.n;
         card.innerHTML =
           '<span class="chk">✓</span>' +
-          '<span class="num">TEMA ' + t.n + '</span>' +
+          '<span class="num">' + (t.n === 0 ? '⚡ REPASO' : 'TEMA ' + t.n) + '</span>' +
           '<span class="tt">' + t.corto + '</span>' +
           '<span class="cnt">' + n + ' preguntas</span>' +
           '<span class="prog">' +
@@ -302,7 +302,7 @@
     $('pgBar').style.width = ((st.i) / st.mazo.length * 100) + '%';
 
     var badge = { dom: '🟢', fal: '🔴', nue: '⚪' }[estadoDe(q.id)] || '';
-    $('temaChip').textContent = badge + ' TEMA ' + q.tema + ' · ' + temaTitulo(q.tema);
+    $('temaChip').textContent = badge + ' ' + (q.tema === 0 ? '⚡ REPASO' : 'TEMA ' + q.tema) + ' · ' + temaTitulo(q.tema);
     $('qText').textContent = q.q;
     $('aText').innerHTML = formatAnswer(q.a);
     $('qIdx').textContent = '#' + (st.i + 1);
