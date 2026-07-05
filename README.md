@@ -12,6 +12,8 @@ App de tarjetas de repaso (flashcards) para la oposición de **Maestro de Educac
 
 - **3.400 preguntas** en total: **100 por cada uno de los 24 temas** desarrollados y **1.000 preguntas cortas** en el mazo «⚡ Repaso rápido» (fechas, artículos, autores y números).
 - Barajado aleatorio, swipe para pasar (móvil) y flechas ← → (teclado).
+- **Modo juego**: puntos, temporizador, rachas 🔥 y pistas tipo concurso (50:50, ×2, +15 s, escudo), con sonidos de acierto/fallo. Al acertar pregunta si la sabías «de verdad» o fue suerte.
+- **Descartar** una pregunta mal formulada (🗑️) para que no vuelva a salir (restaurable desde el inicio) y **escuchar** la pregunta por voz (🗣️).
 
 ## Archivos
 

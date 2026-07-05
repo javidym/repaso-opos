@@ -153,6 +153,50 @@
   .opt.wrong .k{background:var(--rojo);color:#fff;border-color:var(--rojo)}
   .opt.lock{pointer-events:none}
   .opt.dim{opacity:.55}
+  .opt.gone{opacity:.28;text-decoration:line-through;pointer-events:none}
+  .opt.picked{box-shadow:0 0 0 3px color-mix(in srgb,var(--azul) 45%,transparent) inset}
+
+  /* ---- HUD modo juego ---- */
+  .hud{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:12px}
+  .hudtop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .hpts{font-size:22px;font-weight:800;color:var(--dorado);line-height:1}
+  .hpts small{font-size:11px;color:var(--muted);font-weight:700;margin-left:3px}
+  .hstreak{font-size:14px;font-weight:800;color:var(--naranja)}
+  .htime{font-size:16px;font-weight:800;color:var(--azul);font-variant-numeric:tabular-nums}
+  .htime.warn{color:var(--naranja)} .htime.crit{color:var(--rojo);animation:blink .7s infinite}
+  @keyframes blink{50%{opacity:.4}}
+  .timebar{height:6px;border-radius:5px;background:var(--line);overflow:hidden;margin:8px 0}
+  .timebar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--verde),var(--azul));transition:width .25s linear}
+  .timebar i.warn{background:var(--naranja)} .timebar i.crit{background:var(--rojo)}
+  .lifes{display:flex;gap:7px;flex-wrap:wrap}
+  .life{flex:1;min-width:60px;border:1.5px solid var(--line);background:var(--panel2);color:var(--ink);
+    border-radius:10px;padding:7px 6px;font-size:12px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:1px;transition:.13s}
+  .life .ic{font-size:16px}
+  .life .n{font-size:10px;color:var(--muted)}
+  .life:disabled{opacity:.35}
+  .life.on{border-color:var(--dorado);box-shadow:0 0 0 2px color-mix(in srgb,var(--dorado) 40%,transparent) inset}
+  .life.x2{color:var(--morado)} .life.t{color:var(--azul)} .life.f{color:var(--rojo)} .life.sh{color:var(--verde)}
+
+  .chiprow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .cardacts{display:flex;gap:6px}
+  .miniact{width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);
+    font-size:15px;display:grid;place-items:center;color:var(--ink)}
+  .miniact.on{border-color:var(--azul);color:var(--azul)}
+  .miniact:active{transform:scale(.94)}
+
+  .pointspop{text-align:center;font-size:20px;font-weight:800;color:var(--verde);height:24px;margin-top:6px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .pointspop.show{opacity:1;animation:popup .6s}
+  @keyframes popup{0%{transform:translateY(8px) scale(.8)}60%{transform:translateY(-4px) scale(1.15)}100%{transform:translateY(0) scale(1)}}
+  .pointspop.bad{color:var(--rojo)} .pointspop.bonus{color:var(--dorado)}
+
+  /* prompt "¿la sabías?" */
+  .knew{margin-top:12px;background:color-mix(in srgb,var(--verde) 10%,var(--panel));border:1.5px solid var(--verde-d);
+    border-radius:13px;padding:12px;text-align:center}
+  .knew>span{font-size:13.5px;color:var(--ink);display:block;margin-bottom:9px}
+  .knewbtns{display:flex;gap:9px}
+  .knewbtns button{flex:1;border:1.5px solid var(--line);border-radius:11px;padding:12px;font-weight:800;font-size:14px}
+  .knewbtns .know{background:var(--verde);border-color:var(--verde);color:#fff}
+  .knewbtns .luck{background:var(--panel2);color:var(--dorado);border-color:var(--dorado)}
 
   /* controles inferiores */
   .studyfoot{margin-top:14px}
@@ -164,6 +208,14 @@
   .nav .know{background:color-mix(in srgb,var(--verde) 18%,var(--panel));border-color:var(--verde-d);color:var(--verde)}
   .nav .dunno{background:color-mix(in srgb,var(--naranja) 16%,var(--panel));border-color:var(--naranja);color:var(--naranja)}
   .nav button:disabled{opacity:.4}
+  .nextbtn{width:100%;background:linear-gradient(135deg,var(--azul),var(--azul-d))}
+
+  /* resultado juego */
+  .gamescore{margin-bottom:14px}
+  .bigscore{font-size:44px;font-weight:800;color:var(--dorado);line-height:1}
+  .bigscore small{font-size:15px;color:var(--muted)}
+  .gsrow{display:flex;justify-content:center;gap:16px;font-size:12.5px;color:var(--soft);margin-top:6px}
+  .gsbadge{margin-top:10px;font-size:14px;font-weight:800}
 
   /* ---------- RESULTS ---------- */
   .result{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--r);padding:26px 20px;
@@ -229,12 +281,23 @@
           <small>Prioriza las falladas y las que llevas sin ver</small></div>
         <label class="switch"><input type="checkbox" id="tgSmart" checked><span class="slider"></span></label>
       </div>
+      <div class="toggle-row">
+        <div class="lab">🎮 Modo juego
+          <small>Puntos, tiempo, pistas (50:50, ×2…) y rachas</small></div>
+        <label class="switch"><input type="checkbox" id="tgJuego" checked><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="lab">🔊 Sonidos
+          <small>Aviso suave de acierto y de fallo</small></div>
+        <label class="switch"><input type="checkbox" id="tgSonido" checked><span class="slider"></span></label>
+      </div>
 
       <button class="go" id="startBtn" disabled>Empezar repaso</button>
       <button class="go sec hidden" id="failBtn">🔴 Repasar solo mis falladas</button>
       <div class="selinfo" id="selInfo">Selecciona al menos un tema</div>
       <div class="progsum hidden" id="progSum"></div>
       <span class="reset hidden" id="resetProg">Reiniciar mi progreso</span>
+      <span class="reset hidden" id="restoreDisc">Restaurar preguntas descartadas (<b id="discCount">0</b>)</span>
     </div>
 
     <div class="footnote">Toca la tarjeta para girarla y ver la respuesta. Tu progreso se guarda en este dispositivo.</div>
@@ -250,7 +313,24 @@
       </div>
     </div>
 
-    <span class="temachip" id="temaChip">Tema</span>
+    <!-- HUD del modo juego -->
+    <div id="hud" class="hud hidden">
+      <div class="hudtop">
+        <div class="hpts"><span id="hScore">0</span><small>pts</small></div>
+        <div class="hstreak" id="hStreak">🔥 0</div>
+        <div class="htime" id="hTime">⏱ 30</div>
+      </div>
+      <div class="timebar"><i id="timeBar"></i></div>
+      <div class="lifes" id="lifes"></div>
+    </div>
+
+    <div class="chiprow">
+      <span class="temachip" id="temaChip">Tema</span>
+      <div class="cardacts">
+        <button class="miniact" id="ttsBtn" title="Escuchar" aria-label="Escuchar la pregunta">🗣️</button>
+        <button class="miniact" id="discardBtn" title="Descartar" aria-label="Descartar la pregunta">🗑️</button>
+      </div>
+    </div>
 
     <div class="scene">
       <div class="card3d" id="card3d">
@@ -265,16 +345,27 @@
       </div>
     </div>
     <div class="tap-hint pulse" id="tapHint">Toca la tarjeta para ver la respuesta</div>
+    <div class="pointspop" id="pointsPop"></div>
 
     <div id="optsWrap" class="opts hidden"></div>
 
+    <!-- prompt "¿la sabías?" solo al acertar -->
+    <div id="knewWrap" class="knew hidden">
+      <span>Has acertado. ¿La sabías de verdad?</span>
+      <div class="knewbtns">
+        <button class="know" id="knewYes">✅ Sí, la sabía</button>
+        <button class="luck" id="knewLuck">🍀 Fue suerte</button>
+      </div>
+    </div>
+
     <div class="studyfoot">
       <button class="showtest" id="showTest">📝 Ver opciones (test)</button>
-      <div class="nav">
+      <div class="nav" id="navFlash">
         <button id="prevBtn">◀</button>
         <button class="dunno" id="dunnoBtn">No la sabía</button>
         <button class="know" id="knowBtn">La sabía ▶</button>
       </div>
+      <button class="go nextbtn hidden" id="nextBtn">Siguiente ▶</button>
     </div>
   </section>
 
@@ -285,11 +376,19 @@
       <div><h1>Sesión terminada</h1><p id="resTemas">—</p></div>
     </div>
     <div class="result">
+      <div class="gamescore hidden" id="gameScore">
+        <div class="bigscore"><span id="resScore">0</span> <small>pts</small></div>
+        <div class="gsrow">
+          <span>🔥 Mejor racha: <b id="resStreak">0</b></span>
+          <span>🛡️ Fallos anulados: <b id="resShield">0</b></span>
+        </div>
+        <div class="gsbadge" id="resBadge"></div>
+      </div>
       <div class="ring" id="ring"><div id="ringPct">—</div></div>
       <p style="margin:0;color:var(--soft);font-size:13px" id="resSub">Autoevaluación de la sesión</p>
       <div class="stats">
-        <div class="stat"><b id="stKnow" style="color:var(--verde)">0</b><span>La sabía</span></div>
-        <div class="stat"><b id="stDunno" style="color:var(--naranja)">0</b><span>No la sabía</span></div>
+        <div class="stat"><b id="stKnow" style="color:var(--verde)">0</b><span>Acertadas</span></div>
+        <div class="stat"><b id="stDunno" style="color:var(--naranja)">0</b><span>Falladas</span></div>
         <div class="stat"><b id="stTest" style="color:var(--azul)">0</b><span>Test acertado</span></div>
       </div>
       <div class="rbtns">
