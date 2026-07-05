@@ -217,6 +217,48 @@
   .gsrow{display:flex;justify-content:center;gap:16px;font-size:12.5px;color:var(--soft);margin-top:6px}
   .gsbadge{margin-top:10px;font-size:14px;font-weight:800}
 
+  /* monedas + tienda */
+  .wallet{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px}
+  .wallet span{font-size:14px;color:var(--soft)} .wallet b{color:var(--dorado);font-size:16px}
+  .wbtn{border:1.5px solid var(--dorado);background:color-mix(in srgb,var(--dorado) 12%,var(--panel));
+    color:var(--dorado);font-weight:800;font-size:13px;border-radius:10px;padding:9px 12px}
+  .coinsline{font-size:13px;color:var(--soft);margin:2px 0 12px} .coinsline b{color:var(--dorado)}
+  .shoplink{color:var(--dorado);font-weight:800;cursor:pointer;text-decoration:underline}
+
+  /* comodín público (barras de %) */
+  .pubbar{display:flex;align-items:center;gap:6px;margin-top:6px;width:100%}
+  .pubbar i{display:block;height:7px;border-radius:4px;background:linear-gradient(90deg,var(--azul),var(--morado));min-width:2px}
+  .pubbar em{font-style:normal;font-size:11px;font-weight:800;color:var(--soft);flex:none}
+
+  /* mensaje del teléfono */
+  .infomsg{margin-top:10px;background:color-mix(in srgb,var(--azul) 12%,var(--panel));border:1.5px solid var(--azul-d);
+    border-radius:12px;padding:11px 13px;font-size:13.5px;color:var(--ink);animation:fade .3s}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1}}
+
+  /* modal tienda */
+  .modal{position:fixed;inset:0;background:rgba(4,8,16,.66);display:flex;align-items:flex-end;justify-content:center;z-index:30}
+  @media(min-width:620px){.modal{align-items:center}}
+  .sheet{width:100%;max-width:560px;max-height:86vh;overflow:auto;background:var(--bg);border:1.5px solid var(--line);
+    border-radius:20px 20px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom) + 20px)}
+  @media(min-width:620px){.sheet{border-radius:20px}}
+  .sheeth{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .sheeth h2{font-size:18px;margin:0;color:var(--ink)}
+  .coinsbig{font-size:30px;font-weight:800;color:var(--dorado);text-align:center;margin:6px 0}
+  .coinsbig small{font-size:14px;color:var(--muted)}
+  .shophint{font-size:12.5px;color:var(--soft);text-align:center;margin:0 0 14px}
+  .shoplist{display:flex;flex-direction:column;gap:9px}
+  .shopitem{display:flex;align-items:center;gap:11px;border:1.5px solid var(--line);background:var(--panel);
+    border-radius:13px;padding:11px 12px}
+  .shopitem .sic{font-size:22px;flex:none;width:34px;text-align:center}
+  .shopitem .sinfo{flex:1;min-width:0}
+  .shopitem .sinfo .sn{font-weight:800;font-size:14px}
+  .shopitem .sinfo .sd{font-size:11.5px;color:var(--muted)}
+  .shopitem .sown{font-size:11px;color:var(--soft);margin-top:2px}
+  .buybtn{border:0;border-radius:10px;padding:10px 12px;font-weight:800;font-size:13px;color:#0e1726;
+    background:var(--dorado);white-space:nowrap;flex:none}
+  .buybtn:disabled{background:var(--line);color:var(--muted)}
+
   /* ---------- RESULTS ---------- */
   .result{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--r);padding:26px 20px;
     text-align:center;box-shadow:var(--shadow);margin-top:20px}
@@ -255,6 +297,11 @@
       <span class="selall" id="selAll">Seleccionar todos</span>
     </div>
     <div id="temaList"></div>
+
+    <div class="wallet">
+      <span>🪙 <b id="coins">0</b> monedas</span>
+      <button class="wbtn" id="shopBtn">🛒 Tienda de comodines</button>
+    </div>
 
     <div class="cfg">
       <h3>2 · Configura el repaso</h3>
@@ -346,6 +393,7 @@
     </div>
     <div class="tap-hint pulse" id="tapHint">Toca la tarjeta para ver la respuesta</div>
     <div class="pointspop" id="pointsPop"></div>
+    <div id="infoMsg" class="infomsg hidden"></div>
 
     <div id="optsWrap" class="opts hidden"></div>
 
@@ -391,6 +439,7 @@
         <div class="stat"><b id="stDunno" style="color:var(--naranja)">0</b><span>Falladas</span></div>
         <div class="stat"><b id="stTest" style="color:var(--azul)">0</b><span>Test acertado</span></div>
       </div>
+      <div class="coinsline">🪙 <b id="coinsRes">0</b> monedas · <span class="shoplink" id="shopBtn2">🛒 Tienda</span></div>
       <div class="rbtns">
         <button class="again" id="againDunno">🔁 Repasar las falladas</button>
         <button class="again" id="againAll" style="background:linear-gradient(135deg,var(--morado),#7d4fc0)">Nueva sesión (mismos temas)</button>
@@ -398,6 +447,19 @@
       </div>
     </div>
   </section>
+
+  <!-- ============ TIENDA ============ -->
+  <div id="shop" class="modal hidden">
+    <div class="sheet">
+      <div class="sheeth">
+        <h2>🛒 Tienda de comodines</h2>
+        <button class="iconbtn" id="shopClose" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="coinsbig">🪙 <b id="coinsShop">0</b> <small>monedas</small></div>
+      <p class="shophint">Ganas monedas acertando (más rápido y con racha = más monedas). Gástalas en comodines para tus partidas.</p>
+      <div id="shopList" class="shoplist"></div>
+    </div>
+  </div>
 
 </div>
 
