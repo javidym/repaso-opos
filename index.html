@@ -135,6 +135,14 @@
   .back{transform:rotateY(180deg);background:linear-gradient(160deg,var(--panel2),var(--panel))}
   .back .flabel{color:var(--verde)}
   .back .atext{font-size:16.5px;line-height:1.55}
+  .ansok{background:color-mix(in srgb,var(--verde) 15%,transparent);border:1px solid var(--verde-d);
+    border-radius:10px;padding:9px 11px;font-size:14.5px;line-height:1.4;margin-bottom:11px}
+  .ansexp{font-size:15px;line-height:1.55}
+  .anschosen{margin-top:11px;background:color-mix(in srgb,var(--rojo) 12%,transparent);border:1px solid var(--rojo);
+    border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.4;color:var(--soft)}
+  .tag{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
+    padding:2px 6px;border-radius:6px;vertical-align:middle;margin-right:4px}
+  .tag.ok{background:var(--verde);color:#fff} .tag.bad{background:var(--rojo);color:#fff}
   .tap-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:10px;min-height:16px}
   .tap-hint.pulse{animation:pulseh 1.8s infinite}
   @keyframes pulseh{50%{opacity:.4}}

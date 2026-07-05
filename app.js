@@ -239,7 +239,7 @@
     $('pgBar').style.width = ((st.i) / st.mazo.length * 100) + '%';
     var badge = { dom: '🟢', fal: '🔴', nue: '⚪' }[estadoDe(q.id)] || '';
     $('temaChip').textContent = badge + ' ' + etiquetaTema(q.tema) + ' · ' + temaTitulo(q.tema);
-    $('qText').textContent = q.q; $('aText').innerHTML = formatAnswer(q.a); $('qIdx').textContent = '#' + (st.i + 1);
+    $('qText').textContent = q.q; renderBack(q, st.respondidas.hasOwnProperty(q.id) ? st.respondidas[q.id] : null); $('qIdx').textContent = '#' + (st.i + 1);
     $('tapHint').textContent = 'Toca la tarjeta para ver la respuesta'; $('tapHint').className = 'tap-hint pulse';
     $('pointsPop').className = 'pointspop'; $('pointsPop').textContent = '';
     hide('infoMsg'); $('infoMsg').textContent = '';
@@ -259,6 +259,15 @@
     }
   }
   function formatAnswer(a) { return a.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function renderBack(q, chosen) {
+    var opc = q.opciones && q.opciones.length, html = '';
+    if (opc) html += '<div class="ansok"><span class="tag ok">✅ Correcta</span> <b>' + LETRAS[q.correcta] + '.</b> ' + esc(q.opciones[q.correcta]) + '</div>';
+    html += '<div class="ansexp">' + formatAnswer(q.a) + '</div>';
+    if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen"><span class="tag bad">✗ Marcaste</span> <b>' + LETRAS[chosen] + '.</b> ' + esc(q.opciones[chosen]) + ' — no es la válida; la buena es la ' + LETRAS[q.correcta] + ' (arriba).</div>';
+    $('aText').innerHTML = html;
+  }
+  function hintExpl() { var h = $('tapHint'); h.textContent = '👆 Toca la tarjeta para ver la explicación'; h.classList.add('pulse'); }
   function flip() {
     st.volteada = !st.volteada; $('card3d').classList.toggle('flip', st.volteada);
     var h = $('tapHint');
@@ -283,9 +292,10 @@
     st.respondidas[q.id] = idx;
     if (st.juego) {
       st.answered = true; stopTimer(); if (btn) btn.classList.add('picked');
-      revealOptions(q, idx); disableLifes();
+      revealOptions(q, idx); renderBack(q, idx); disableLifes();
       if (idx === q.correcta) onCorrect(q); else onWrong(q, false);
-    } else revealOptions(q, idx);
+      hintExpl();
+    } else { revealOptions(q, idx); renderBack(q, idx); }
   }
   function revealOptions(q, chosen) {
     var btns = $('optsWrap').children;
@@ -343,7 +353,7 @@
     if (st.answered) return; st.answered = true; var q = st.mazo[st.i];
     var btns = $('optsWrap').children;
     for (var i = 0; i < btns.length; i++) { var b = btns[i]; b.classList.add('lock'); if (parseInt(b.dataset.idx, 10) === q.correcta) b.classList.add('correct'); else b.classList.add('dim'); }
-    disableLifes(); onWrong(q, true);
+    renderBack(q, null); disableLifes(); onWrong(q, true); hintExpl();
   }
   function grantBonus() {
     var keys = ['c5050', 'cpub', 'ctel', 'cx2', 'csh', 'ctime'];
