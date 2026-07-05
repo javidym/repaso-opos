@@ -262,9 +262,9 @@
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function renderBack(q, chosen) {
     var opc = q.opciones && q.opciones.length, html = '';
-    if (opc) html += '<div class="ansok"><span class="tag ok">✅ Correcta</span> <b>' + LETRAS[q.correcta] + '.</b> ' + esc(q.opciones[q.correcta]) + '</div>';
-    html += '<div class="ansexp">' + formatAnswer(q.a) + '</div>';
-    if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen"><span class="tag bad">✗ Marcaste</span> <b>' + LETRAS[chosen] + '.</b> ' + esc(q.opciones[chosen]) + ' — no es la válida; la buena es la ' + LETRAS[q.correcta] + ' (arriba).</div>';
+    if (opc) html += '<div class="ansok"><span class="okbadge">' + LETRAS[q.correcta] + '</span><span class="oktxt">' + esc(q.opciones[q.correcta]) + '</span></div>';
+    html += '<div class="ansexp"><span class="exlab">Por qué</span>' + formatAnswer(q.a) + '</div>';
+    if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen">Marcaste la <b>' + LETRAS[chosen] + '</b> («' + esc(q.opciones[chosen]) + '»): no es la válida.</div>';
     $('aText').innerHTML = html;
   }
   function hintExpl() { var h = $('tapHint'); h.textContent = '👆 Toca la tarjeta para ver la explicación'; h.classList.add('pulse'); }
