@@ -35,12 +35,12 @@
     { key: 'ctime', ic: '⏱', cls: 't', label: '+15 s' }
   ];
   var SHOP = [
-    { key: 'c5050', ic: '50:50', name: 'Comodín 50:50', desc: 'Elimina 2 opciones incorrectas', price: 300 },
-    { key: 'cpub', ic: '📊', name: 'Comodín del público', desc: 'Muestra un % por opción (¡no siempre acierta!)', price: 500 },
-    { key: 'ctel', ic: '📞', name: 'Llamada a un amigo', desc: 'Puede saberla… o no llegar a tiempo', price: 700 },
-    { key: 'cx2', ic: '×2', name: 'Doblar puntos', desc: 'Duplica los puntos de esa pregunta', price: 900 },
-    { key: 'csh', ic: '🛡️', name: 'Escudo', desc: 'Anula el próximo fallo (racha a salvo)', price: 1200 },
-    { key: 'ctime', ic: '⏱', name: '+15 segundos', desc: 'Amplía el tiempo de la pregunta', price: 250 }
+    { key: 'ctel', ic: '📞', name: 'Llamada a un amigo', desc: 'A veces la sabe… y a veces te hace dudar', price: 1500 },
+    { key: 'cpub', ic: '📊', name: 'Comodín del público', desc: 'Reparte un % por opción (no siempre acierta)', price: 1000 },
+    { key: 'c5050', ic: '50:50', name: 'Comodín 50:50', desc: 'Elimina 2 opciones incorrectas', price: 500 },
+    { key: 'csh', ic: '🛡️', name: 'Escudo', desc: 'Anula el próximo fallo (racha a salvo)', price: 400 },
+    { key: 'cx2', ic: '×2', name: 'Doblar puntos', desc: 'Duplica los puntos de esa pregunta', price: 250 },
+    { key: 'ctime', ic: '⏱', name: '+15 segundos', desc: 'Amplía el tiempo de la pregunta', price: 150 }
   ];
 
   function $(id) { return document.getElementById(id); }
@@ -214,7 +214,11 @@
 
   /* ---------------- SESIÓN ---------------- */
   function ordenarMazo(pool) {
-    if (st.smart) { var prio = { fal: 0, nue: 1, dom: 2 }; return pool.slice().sort(function (a, b) { var pa = prio[estadoDe(a.id)], pb = prio[estadoDe(b.id)]; if (pa !== pb) return pa - pb; var ta = getStat(a.id).t || 0, tb = getStat(b.id).t || 0; if (ta !== tb) return ta - tb; return Math.random() - 0.5; }); }
+    if (st.smart) {
+      var g = { fal: [], nue: [], dom: [] };
+      pool.forEach(function (q) { g[estadoDe(q.id)].push(q); });
+      return shuffle(g.fal).concat(shuffle(g.nue), shuffle(g.dom)); // falladas primero, pero barajadas cada vez
+    }
     return st.barajar ? shuffle(pool) : pool.slice();
   }
   function startSession(pool, keepScore) {
@@ -334,13 +338,14 @@
 
   function onCorrect(q) {
     sfx('ok');
-    var base = 100, timeBonus = Math.round(st.timeLeft * 4), streakBonus = st.streak * 10, doubled = st.pendingX2;
-    var pts = base + timeBonus + streakBonus; if (doubled) { pts *= 2; st.pendingX2 = false; sfx('bonus'); }
-    st.score += pts; coins += pts; saveCoins();
     st.streak++; if (st.streak > st.best) st.best = st.streak;
-    pop('+' + pts + (streakBonus ? ' 🔥' : ''), doubled ? 'bonus' : '');
+    // sin racha, pocos puntos; con cada acierto seguido, sustancialmente más
+    var pts = 10 * st.streak + Math.round(st.timeLeft / 10), doubled = st.pendingX2;
+    if (doubled) { pts *= 2; st.pendingX2 = false; sfx('bonus'); }
+    st.score += pts; coins += pts; saveCoins();
+    pop('+' + pts + (st.streak >= 2 ? ' 🔥×' + st.streak : ''), doubled ? 'bonus' : '');
     updateScoreUI(); updateCoinsUI(); renderLifes();
-    if (st.streak > 0 && st.streak % 5 === 0 && st.streak !== st.lastMile) { st.lastMile = st.streak; grantBonus(); }
+    if (st.streak % 5 === 0 && st.streak !== st.lastMile) { st.lastMile = st.streak; grantBonus(); }
     show('knewWrap');
   }
   function onWrong(q, timeout) {
@@ -394,22 +399,25 @@
   function publico(q) {
     var opts = Array.prototype.slice.call($('optsWrap').children).filter(function (b) { return !b.classList.contains('gone'); });
     var idxs = opts.map(function (b) { return parseInt(b.dataset.idx, 10); });
-    var acierta = Math.random() < 0.72;
+    var acierta = Math.random() < 0.58;
     var star = q.correcta;
     if (!acierta) { var w = idxs.filter(function (i) { return i !== q.correcta; }); if (w.length) star = w[Math.floor(Math.random() * w.length)]; }
-    var wt = {}; idxs.forEach(function (i) { wt[i] = 2 + Math.random() * 7; }); wt[star] += 18 + Math.random() * 16;
+    var wt = {}; idxs.forEach(function (i) { wt[i] = 4 + Math.random() * 8; }); wt[star] += 6 + Math.random() * 9;
     var sum = idxs.reduce(function (s, i) { return s + wt[i]; }, 0), acc = 0, perc = {};
     idxs.forEach(function (i, k) { perc[i] = (k === idxs.length - 1) ? (100 - acc) : Math.round(wt[i] / sum * 100); acc += perc[i]; });
     opts.forEach(function (b) { var i = parseInt(b.dataset.idx, 10); var bar = document.createElement('span'); bar.className = 'pubbar'; bar.innerHTML = '<i style="width:' + Math.max(4, perc[i]) + '%"></i><em>' + perc[i] + '%</em>'; b.appendChild(bar); });
   }
   function telefono(q) {
     var msg, r = Math.random();
-    if (r < 0.15) { msg = '📞 «¡Uf! No me dio tiempo a mirarla bien…»'; }
+    if (r < 0.2) { msg = '📞 «¡Uf! No me dio tiempo a mirarla bien…»'; }
     else {
-      var acierta = Math.random() < 0.7, idxs = q.opciones.map(function (o, i) { return i; }), pick;
+      var acierta = Math.random() < 0.55, seguro = Math.random() < 0.45;
+      var idxs = q.opciones.map(function (o, i) { return i; }), pick;
       if (acierta) pick = q.correcta; else { var w = idxs.filter(function (i) { return i !== q.correcta; }); pick = w[Math.floor(Math.random() * w.length)]; }
-      var pre = acierta ? (Math.random() < 0.5 ? 'Estoy casi seguro de que' : 'Yo diría que') : 'No lo tengo claro, pero puede que sea';
-      msg = '📞 «' + pre + ' es la ' + LETRAS[pick] + '.»';
+      var frase;
+      if (acierta) frase = seguro ? ('Casi seguro que es la ' + LETRAS[pick] + '.') : ('Me suena que es la ' + LETRAS[pick] + ', pero no lo juraría…');
+      else frase = seguro ? ('Yo diría que es la ' + LETRAS[pick] + '…') : ('No estoy nada seguro, ¿quizá la ' + LETRAS[pick] + '?');
+      msg = '📞 «' + frase + '»';
     }
     var el = $('infoMsg'); el.textContent = msg; el.classList.remove('hidden');
   }
