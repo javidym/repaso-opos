@@ -48,6 +48,15 @@
   function hide(id) { $(id).classList.add('hidden'); }
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function countTema(n) { var c = 0; for (var k = 0; k < PREGUNTAS.length; k++) if (PREGUNTAS[k].tema === n) c++; return c; }
+  // ¿alguna opción se refiere a otras por letra/posición? (A y B, Solo A, Ninguna, todas/anteriores...)
+  function esMeta(ops) {
+    return ops.some(function (o) {
+      return /\b[abcd]\s*y\s*[abcd]\b/i.test(o) || /\bs[oó]lo\s+[abcd]\b/i.test(o) || /\bsolo\s+[abcd]\b/i.test(o) ||
+        /\bningun[ao]\b/i.test(o) || /anteriores/i.test(o) || /\bambas\b/i.test(o) || /(todas|ambas) son/i.test(o) || /son (correctas|ciertas|falsas|verdaderas)/i.test(o);
+    });
+  }
+  // orden de presentación de las 4 opciones (barajado, salvo preguntas meta)
+  function makeOrder(q) { var base = q.opciones.map(function (o, i) { return i; }); return esMeta(q.opciones) ? base : shuffle(base); }
 
   /* ---------------- SONIDO ---------------- */
   var actx = null;
@@ -238,6 +247,7 @@
     stopTimer(); stopSpeak();
     var q = st.mazo[st.i];
     st.volteada = false; st.answered = false; st.cardUsed = {};
+    st.order = makeOrder(q); st.correctDisp = st.order.indexOf(q.correcta);   // barajar opciones cada vez
     $('card3d').classList.remove('flip');
     $('pgCur').textContent = st.i + 1; $('pgLabel').textContent = 'Tarjeta ' + (st.i + 1);
     $('pgBar').style.width = ((st.i) / st.mazo.length * 100) + '%';
@@ -266,9 +276,9 @@
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function renderBack(q, chosen) {
     var opc = q.opciones && q.opciones.length, html = '';
-    if (opc) html += '<div class="ansok"><span class="okbadge">' + LETRAS[q.correcta] + '</span><span class="oktxt">' + esc(q.opciones[q.correcta]) + '</span></div>';
+    if (opc) html += '<div class="ansok"><span class="okbadge">' + LETRAS[st.correctDisp] + '</span><span class="oktxt">' + esc(q.opciones[q.correcta]) + '</span></div>';
     html += '<div class="ansexp"><span class="exlab">Por qué</span>' + formatAnswer(q.a) + '</div>';
-    if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen">Marcaste la <b>' + LETRAS[chosen] + '</b> («' + esc(q.opciones[chosen]) + '»): no es la válida.</div>';
+    if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen">Marcaste la <b>' + LETRAS[st.order.indexOf(chosen)] + '</b> («' + esc(q.opciones[chosen]) + '»): no es la válida.</div>';
     $('aText').innerHTML = html;
   }
   function hintExpl() { var h = $('tapHint'); h.textContent = '👆 Toca la tarjeta para ver la explicación'; h.classList.add('pulse'); }
@@ -282,10 +292,10 @@
   /* ---------------- OPCIONES ---------------- */
   function buildOptions(q) {
     var wrap = $('optsWrap'); wrap.innerHTML = '';
-    q.opciones.forEach(function (txt, idx) {
-      var b = document.createElement('button'); b.className = 'opt'; b.type = 'button'; b.dataset.idx = idx;
-      b.innerHTML = '<span class="k">' + LETRAS[idx] + '</span><span>' + txt + '</span>';
-      b.addEventListener('click', function () { onAnswer(q, idx, b); });
+    st.order.forEach(function (orig, disp) {
+      var b = document.createElement('button'); b.className = 'opt'; b.type = 'button'; b.dataset.idx = disp; b.dataset.orig = orig;
+      b.innerHTML = '<span class="k">' + LETRAS[disp] + '</span><span>' + esc(q.opciones[orig]) + '</span>';
+      b.addEventListener('click', function () { onAnswer(q, orig, b); });
       wrap.appendChild(b);
     });
     show('optsWrap');
@@ -304,12 +314,12 @@
   function revealOptions(q, chosen) {
     var btns = $('optsWrap').children;
     for (var i = 0; i < btns.length; i++) {
-      var b = btns[i], idx = parseInt(b.dataset.idx, 10); b.classList.add('lock');
-      if (idx === q.correcta) b.classList.add('correct');
-      else if (idx === chosen) b.classList.add('wrong');
+      var b = btns[i], orig = parseInt(b.dataset.orig, 10); b.classList.add('lock');
+      if (orig === q.correcta) b.classList.add('correct');
+      else if (orig === chosen) b.classList.add('wrong');
       else if (!b.classList.contains('gone')) b.classList.add('dim');
     }
-    if (!st.juego) { var h = $('tapHint'); h.textContent = (chosen === q.correcta) ? '✅ ¡Correcto! Toca la tarjeta para ampliar.' : '❌ Correcta: ' + LETRAS[q.correcta] + '. Toca la tarjeta para ver la explicación.'; h.classList.remove('pulse'); }
+    if (!st.juego) { var h = $('tapHint'); h.textContent = (chosen === q.correcta) ? '✅ ¡Correcto! Toca la tarjeta para ampliar.' : '❌ Correcta: ' + LETRAS[st.correctDisp] + '. Toca la tarjeta para ver la explicación.'; h.classList.remove('pulse'); }
   }
   function toggleTest() {
     var q = st.mazo[st.i]; if (!q.opciones || !q.opciones.length) return; var wrap = $('optsWrap');
@@ -357,7 +367,7 @@
   function onTimeout() {
     if (st.answered) return; st.answered = true; var q = st.mazo[st.i];
     var btns = $('optsWrap').children;
-    for (var i = 0; i < btns.length; i++) { var b = btns[i]; b.classList.add('lock'); if (parseInt(b.dataset.idx, 10) === q.correcta) b.classList.add('correct'); else b.classList.add('dim'); }
+    for (var i = 0; i < btns.length; i++) { var b = btns[i]; b.classList.add('lock'); if (parseInt(b.dataset.orig, 10) === q.correcta) b.classList.add('correct'); else b.classList.add('dim'); }
     renderBack(q, null); disableLifes(); onWrong(q, true); hintExpl();
   }
   function grantBonus() {
@@ -387,7 +397,7 @@
     if (key === 'c5050') {
       var wrongIdx = []; q.opciones.forEach(function (o, i) { if (i !== q.correcta) wrongIdx.push(i); });
       wrongIdx = shuffle(wrongIdx).slice(0, 2);
-      Array.prototype.forEach.call($('optsWrap').children, function (b) { if (wrongIdx.indexOf(parseInt(b.dataset.idx, 10)) >= 0) b.classList.add('gone'); });
+      Array.prototype.forEach.call($('optsWrap').children, function (b) { if (wrongIdx.indexOf(parseInt(b.dataset.orig, 10)) >= 0) b.classList.add('gone'); });
     } else if (key === 'cpub') { publico(q); }
     else if (key === 'ctel') { telefono(q); }
     else if (key === 'ctime') { st.timeLeft = Math.min(QTIME, st.timeLeft + 15); updateTimeUI(); }
@@ -398,13 +408,13 @@
 
   function publico(q) {
     var opts = Array.prototype.slice.call($('optsWrap').children).filter(function (b) { return !b.classList.contains('gone'); });
-    var idxs = opts.map(function (b) { return parseInt(b.dataset.idx, 10); });
+    var disp = opts.map(function (b) { return parseInt(b.dataset.idx, 10); });
     var acierta = Math.random() < 0.58;
-    var star = q.correcta;
-    if (!acierta) { var w = idxs.filter(function (i) { return i !== q.correcta; }); if (w.length) star = w[Math.floor(Math.random() * w.length)]; }
-    var wt = {}; idxs.forEach(function (i) { wt[i] = 4 + Math.random() * 8; }); wt[star] += 6 + Math.random() * 9;
-    var sum = idxs.reduce(function (s, i) { return s + wt[i]; }, 0), acc = 0, perc = {};
-    idxs.forEach(function (i, k) { perc[i] = (k === idxs.length - 1) ? (100 - acc) : Math.round(wt[i] / sum * 100); acc += perc[i]; });
+    var star = st.correctDisp;
+    if (!acierta || disp.indexOf(star) < 0) { var w = disp.filter(function (i) { return i !== st.correctDisp; }); if (w.length) star = w[Math.floor(Math.random() * w.length)]; }
+    var wt = {}; disp.forEach(function (i) { wt[i] = 4 + Math.random() * 8; }); wt[star] += 6 + Math.random() * 9;
+    var sum = disp.reduce(function (s, i) { return s + wt[i]; }, 0), acc = 0, perc = {};
+    disp.forEach(function (i, k) { perc[i] = (k === disp.length - 1) ? (100 - acc) : Math.round(wt[i] / sum * 100); acc += perc[i]; });
     opts.forEach(function (b) { var i = parseInt(b.dataset.idx, 10); var bar = document.createElement('span'); bar.className = 'pubbar'; bar.innerHTML = '<i style="width:' + Math.max(4, perc[i]) + '%"></i><em>' + perc[i] + '%</em>'; b.appendChild(bar); });
   }
   function telefono(q) {
@@ -412,8 +422,8 @@
     if (r < 0.2) { msg = '📞 «¡Uf! No me dio tiempo a mirarla bien…»'; }
     else {
       var acierta = Math.random() < 0.55, seguro = Math.random() < 0.45;
-      var idxs = q.opciones.map(function (o, i) { return i; }), pick;
-      if (acierta) pick = q.correcta; else { var w = idxs.filter(function (i) { return i !== q.correcta; }); pick = w[Math.floor(Math.random() * w.length)]; }
+      var disp = st.order.map(function (o, i) { return i; }), pick;
+      if (acierta) pick = st.correctDisp; else { var w = disp.filter(function (i) { return i !== st.correctDisp; }); pick = w[Math.floor(Math.random() * w.length)]; }
       var frase;
       if (acierta) frase = seguro ? ('Casi seguro que es la ' + LETRAS[pick] + '.') : ('Me suena que es la ' + LETRAS[pick] + ', pero no lo juraría…');
       else frase = seguro ? ('Yo diría que es la ' + LETRAS[pick] + '…') : ('No estoy nada seguro, ¿quizá la ' + LETRAS[pick] + '?');
