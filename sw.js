@@ -1,6 +1,6 @@
 /* Service worker · Repaso OPOS
    Sube el número de versión cuando cambies preguntas.js o el código. */
-var VERSION = 'repaso-opos-v24';
+var VERSION = 'repaso-opos-v25';
 var ASSETS = [
   './',
   './index.html',
@@ -28,8 +28,13 @@ self.addEventListener('activate', function (e) {
 // con vuelta a la caché cuando se está sin conexión.
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
+  // Pedimos a la red saltándonos la caché HTTP del navegador (cache:'reload'),
+  // así los cambios de app.js/preguntas.js llegan sin esperar a que caduque la caché.
+  var netReq = (e.request.url.indexOf(self.location.origin) === 0)
+    ? new Request(e.request.url, { cache: 'reload' })
+    : e.request;
   e.respondWith(
-    fetch(e.request).then(function (resp) {
+    fetch(netReq).then(function (resp) {
       var copy = resp.clone();
       caches.open(VERSION).then(function (c) { c.put(e.request, copy); });
       return resp;
