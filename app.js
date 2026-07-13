@@ -14,7 +14,7 @@
 
   var st = {
     seleccion: new Set(),
-    size: 30, modoTest: true, barajar: true, smart: true, juego: true, sonido: true,
+    size: 30, modoTest: true, barajar: true, smart: true, juego: true, sonido: true, tiempo: true, eink: false, juegoEf: true,
     mazo: [], i: 0, volteada: false,
     respondidas: {}, sabidas: {}, committed: {}, cardUsed: {},
     score: 0, streak: 0, best: 0, shieldUsed: 0,
@@ -97,13 +97,13 @@
 
   /* ---------------- PERSISTENCIA ---------------- */
   var LS = 'repasoOpos.cfg', LS_STATS = 'repasoOpos.stats', LS_DISC = 'repasoOpos.discarded', LS_INV = 'repasoOpos.inv', LS_COINS = 'repasoOpos.coins', LS_FAV = 'repasoOpos.fav';
-  function saveCfg() { try { localStorage.setItem(LS, JSON.stringify({ sel: Array.from(st.seleccion), size: st.size, test: st.modoTest, shuffle: st.barajar, smart: st.smart, juego: st.juego, sonido: st.sonido })); } catch (e) {} }
+  function saveCfg() { try { localStorage.setItem(LS, JSON.stringify({ sel: Array.from(st.seleccion), size: st.size, test: st.modoTest, shuffle: st.barajar, smart: st.smart, juego: st.juego, sonido: st.sonido, tiempo: st.tiempo, eink: st.eink })); } catch (e) {} }
   function loadCfg() {
     try {
       var c = JSON.parse(localStorage.getItem(LS) || '{}');
       if (c.sel) c.sel.forEach(function (n) { if (countTema(n)) st.seleccion.add(n); });
       if (typeof c.size === 'number') st.size = c.size;
-      ['test:modoTest', 'shuffle:barajar', 'smart:smart', 'juego:juego', 'sonido:sonido'].forEach(function (p) { var k = p.split(':'); if (typeof c[k[0]] === 'boolean') st[k[1]] = c[k[0]]; });
+      ['test:modoTest', 'shuffle:barajar', 'smart:smart', 'juego:juego', 'sonido:sonido', 'tiempo:tiempo', 'eink:eink'].forEach(function (p) { var k = p.split(':'); if (typeof c[k[0]] === 'boolean') st[k[1]] = c[k[0]]; });
     } catch (e) {}
   }
   function loadStats() { try { stats = JSON.parse(localStorage.getItem(LS_STATS) || '{}') || {}; } catch (e) { stats = {}; } }
@@ -123,6 +123,20 @@
   function estadoDe(id) { var s = stats[id]; if (!s || s.lo === undefined) return 'nue'; return s.lo ? 'dom' : 'fal'; }
 
   function updateCoinsUI() { ['coins', 'coinsRes', 'coinsShop'].forEach(function (id) { var e = $(id); if (e) e.textContent = coins; }); }
+
+  /* ---------------- MODO KINDLE (e-ink) ---------------- */
+  function applyEink() {
+    document.body.classList.toggle('eink', st.eink);
+    var b = $('einkBtn'); if (b) b.classList.toggle('on', st.eink);
+    var t = $('tgEink'); if (t) t.checked = st.eink;
+  }
+  // deja el HUD sin cuenta atrás (partida relajada o modo Kindle)
+  function noTimer() {
+    stopTimer(); st.timeLeft = QTIME;
+    var bar = $('timeBar'), lab = $('hTime');
+    if (bar) { bar.style.width = '100%'; bar.className = ''; }
+    if (lab) { lab.textContent = '⏱ ∞'; lab.className = 'htime'; }
+  }
 
   /* ---------------- PROGRESO ---------------- */
   function commitCard(id) {
@@ -189,8 +203,10 @@
       if (parseInt(b.dataset.n, 10) === st.size) { Array.prototype.forEach.call($('sizeSeg').children, function (x) { x.classList.remove('on'); }); b.classList.add('on'); }
       b.addEventListener('click', function () { Array.prototype.forEach.call($('sizeSeg').children, function (x) { x.classList.remove('on'); }); b.classList.add('on'); st.size = parseInt(b.dataset.n, 10); updateSelInfo(); saveCfg(); });
     });
-    var tg = { tgTest: 'modoTest', tgShuffle: 'barajar', tgSmart: 'smart', tgJuego: 'juego', tgSonido: 'sonido' };
+    var tg = { tgTest: 'modoTest', tgShuffle: 'barajar', tgSmart: 'smart', tgJuego: 'juego', tgSonido: 'sonido', tgTiempo: 'tiempo' };
     Object.keys(tg).forEach(function (id) { $(id).checked = st[tg[id]]; $(id).addEventListener('change', function () { st[tg[id]] = this.checked; saveCfg(); }); });
+    $('tgEink').checked = st.eink;
+    $('tgEink').addEventListener('change', function () { st.eink = this.checked; applyEink(); saveCfg(); renderTemas(); });
     $('selAll').addEventListener('click', function () {
       var disp = TEMAS.filter(function (t) { return countTema(t.n); }).map(function (t) { return t.n; });
       var todos = disp.every(function (n) { return st.seleccion.has(n); });
@@ -252,7 +268,8 @@
     st.streak = 0; st.pendingX2 = false; st.shield = false; st.lastMile = 0;
     hide('home'); hide('results'); hide('shop'); show('study');
     $('pgTot').textContent = mazo.length;
-    if (st.juego) show('hud'); else hide('hud');
+    st.juegoEf = st.juego && !st.eink;               // en modo Kindle se juega como tarjeta simple
+    if (st.juegoEf) show('hud'); else hide('hud');
     window.scrollTo(0, 0); renderCard();
   }
   function temaTitulo(n) { for (var i = 0; i < TEMAS.length; i++) if (TEMAS[i].n === n) return TEMAS[i].corto; return 'Tema ' + n; }
@@ -273,9 +290,11 @@
     $('pointsPop').className = 'pointspop'; $('pointsPop').textContent = '';
     hide('infoMsg'); $('infoMsg').textContent = '';
     hide('knewWrap'); hide('optsWrap'); $('optsWrap').innerHTML = '';
-    if (st.juego) {
+    if (st.juegoEf) {
+      show('hud');
       hide('showTest'); hide('navFlash'); hide('nextBtn'); $('nextBtn').textContent = 'Siguiente ▶';
-      buildOptions(q); renderLifes(); updateScoreUI(); startTimer();
+      buildOptions(q); renderLifes(); updateScoreUI();
+      if (st.tiempo) startTimer(); else noTimer();
     } else {
       hide('hud'); hide('nextBtn'); show('navFlash');
       $('showTest').classList.remove('hidden');
@@ -316,10 +335,10 @@
     show('optsWrap');
   }
   function onAnswer(q, idx, btn) {
-    if (st.juego && st.answered) return;
-    if (!st.juego && st.respondidas.hasOwnProperty(q.id)) return;
+    if (st.juegoEf && st.answered) return;
+    if (!st.juegoEf && st.respondidas.hasOwnProperty(q.id)) return;
     st.respondidas[q.id] = idx;
-    if (st.juego) {
+    if (st.juegoEf) {
       st.answered = true; stopTimer(); if (btn) btn.classList.add('picked');
       revealOptions(q, idx); renderBack(q, idx); disableLifes();
       if (idx === q.correcta) onCorrect(q); else onWrong(q, false);
@@ -334,7 +353,7 @@
       else if (orig === chosen) b.classList.add('wrong');
       else if (!b.classList.contains('gone')) b.classList.add('dim');
     }
-    if (!st.juego) { var h = $('tapHint'); h.textContent = (chosen === q.correcta) ? '✅ ¡Correcto! Toca la tarjeta para ampliar.' : '❌ Correcta: ' + LETRAS[st.correctDisp] + '. Toca la tarjeta para ver la explicación.'; h.classList.remove('pulse'); }
+    if (!st.juegoEf) { var h = $('tapHint'); h.textContent = (chosen === q.correcta) ? '✅ ¡Correcto! Toca la tarjeta para ampliar.' : '❌ Correcta: ' + LETRAS[st.correctDisp] + '. Toca la tarjeta para ver la explicación.'; h.classList.remove('pulse'); }
   }
   function toggleTest() {
     var q = st.mazo[st.i]; if (!q.opciones || !q.opciones.length) return; var wrap = $('optsWrap');
@@ -491,7 +510,7 @@
     $('stKnow').textContent = know; $('stDunno').textContent = dunno; $('stTest').textContent = testTot ? (testOk + '/' + testTot) : '—';
     $('resSub').textContent = evaluadas ? ('Sabías ' + know + ' de ' + evaluadas + ' tarjetas · progreso guardado') : 'Progreso guardado';
     $('resTemas').textContent = Array.from(st.seleccion).sort(function (a, b) { return a - b; }).map(function (n) { return n === 0 ? 'REPASO' : 'T' + n; }).join(' · ') + ' · ' + total + ' tarjetas';
-    if (st.juego) {
+    if (st.juegoEf) {
       show('gameScore'); $('resScore').textContent = st.score; $('resStreak').textContent = st.best; $('resShield').textContent = st.shieldUsed;
       var acc = testTot ? testOk / testTot : 0, badge = '';
       if (acc >= 0.95 && st.score >= 1500) badge = '🏆 ¡Maestro/a! Nivel oposición superado';
@@ -515,16 +534,20 @@
     $('ttsBtn').addEventListener('click', speak);
     $('favBtn').addEventListener('click', toggleFav);
     $('discardBtn').addEventListener('click', discardCurrent);
+    $('einkBtn').addEventListener('click', function () {
+      st.eink = !st.eink; applyEink(); saveCfg();
+      st.juegoEf = st.juego && !st.eink; stopTimer(); renderCard();   // aplica el cambio en la tarjeta actual
+    });
     $('exitBtn').addEventListener('click', function () { if (confirm('¿Salir? Se guardará el progreso de lo respondido.')) { commitCard(st.mazo[st.i].id); stopTimer(); stopSpeak(); hide('study'); show('home'); renderTemas(); } });
     var x0 = null, scene = document.querySelector('.scene');
     scene.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
-    scene.addEventListener('touchend', function (e) { if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 70) { if (dx < 0) { if (!st.juego || st.answered) go(1); } else { if (!st.juego) go(-1); } } }, { passive: true });
+    scene.addEventListener('touchend', function (e) { if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 70) { if (dx < 0) { if (!st.juegoEf || st.answered) go(1); } else { if (!st.juegoEf) go(-1); } } }, { passive: true });
     document.addEventListener('keydown', function (e) {
       if (!$('shop').classList.contains('hidden') && e.key === 'Escape') { hide('shop'); return; }
       if ($('study').classList.contains('hidden')) return;
-      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (st.juego && st.answered) go(1); else flip(); }
-      else if (e.key === 'ArrowRight') { if (!st.juego || st.answered) go(1); }
-      else if (e.key === 'ArrowLeft') { if (!st.juego) go(-1); }
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (st.juegoEf && st.answered) go(1); else flip(); }
+      else if (e.key === 'ArrowRight') { if (!st.juegoEf || st.answered) go(1); }
+      else if (e.key === 'ArrowLeft') { if (!st.juegoEf) go(-1); }
     });
   }
   function bindResults() {
@@ -544,7 +567,7 @@
       if (qa !== qb) return qa - qb;   // los mazos ⚡ (Repaso rápido y Glosario) van primero
       return a.n - b.n;
     });
-    loadStats(); loadDisc(); loadFav(); loadInv(); loadCoins(); loadCfg();
+    loadStats(); loadDisc(); loadFav(); loadInv(); loadCoins(); loadCfg(); applyEink();
     document.addEventListener('pointerdown', function once() { audio(); document.removeEventListener('pointerdown', once); });
     bindHome(); bindStudy(); bindResults(); renderTemas(); updateCoinsUI();
   }

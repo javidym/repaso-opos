@@ -291,6 +291,49 @@
 
   .footnote{text-align:center;font-size:11px;color:var(--muted);margin-top:26px}
   .empty{background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--soft);font-size:14px;margin-top:10px}
+
+  /* ---------- MODO KINDLE / E-INK ---------- */
+  body.eink{
+    --bg:#fff; --bg2:#fff; --panel:#fff; --panel2:#fff;
+    --line:#000; --ink:#000; --soft:#000; --muted:#333;
+    --azul:#000; --azul-d:#000; --verde:#000; --verde-d:#000;
+    --rojo:#000; --naranja:#000; --morado:#000; --dorado:#000; --shadow:none;
+    background:#fff !important; color:#000 !important;
+  }
+  body.eink *{animation:none !important;transition:none !important;box-shadow:none !important;text-shadow:none !important}
+  body.eink .brand .logo{background:#fff !important;border:2px solid #000}
+  body.eink .blk-h .ln{background:#000}
+  /* tarjeta sin volteo 3D: pregunta y respuesta apiladas */
+  body.eink .scene{perspective:none;display:block;min-height:0}
+  body.eink .card3d{transform:none !important;transform-style:flat}
+  body.eink .face{position:static;-webkit-backface-visibility:visible;backface-visibility:visible;
+    transform:none !important;border:2px solid #000;border-radius:8px;background:#fff !important;margin-bottom:12px;overflow:visible}
+  body.eink .back{display:none;background:#fff !important}
+  body.eink .card3d.flip .back{display:flex}
+  body.eink .front .qtext{font-size:22px;color:#000}
+  body.eink .flabel,body.eink .back .flabel,body.eink .exlab,body.eink .back .flabel span{color:#000 !important}
+  body.eink .temachip{background:#fff;border:1.5px solid #000;color:#000}
+  body.eink .ansok{background:#fff !important;border:2px solid #000}
+  body.eink .okbadge{background:#000 !important;color:#fff !important}
+  body.eink .ansexp{border-left:3px solid #000}
+  body.eink .tap-hint{color:#000}
+  /* opciones: correcta = borde grueso + letra rellena; incorrecta = tachada */
+  body.eink .opt{border:1.5px solid #000;background:#fff;color:#000}
+  body.eink .opt .k{background:#fff;border:1.5px solid #000;color:#000}
+  body.eink .opt.correct{border-width:3px;font-weight:800;background:#fff}
+  body.eink .opt.correct .k{background:#000;color:#fff}
+  body.eink .opt.wrong{background:#fff;text-decoration:line-through;opacity:.75}
+  body.eink .opt.dim{opacity:.6}
+  /* botones grandes y con borde */
+  body.eink .iconbtn,body.eink .nav button,body.eink .showtest,body.eink .go,body.eink .miniact,body.eink .seg button,body.eink .tcard{
+    background:#fff !important;color:#000 !important;border:2px solid #000 !important}
+  body.eink .go{font-weight:800}
+  body.eink .seg button.on,body.eink .tcard.sel,body.eink .miniact.on,body.eink .miniact.fav,body.eink #einkBtn,body.eink .tcard.sel .chk{
+    background:#000 !important;color:#fff !important}
+  body.eink .tcard.sel .num,body.eink .tcard.sel .tt,body.eink .tcard.sel .cnt,body.eink .tcard.sel .prog{color:#fff !important}
+  body.eink .result .ring{background:#fff !important;border:2px solid #000}
+  /* ocultar lo lúdico/animado en e-ink */
+  body.eink .hud,body.eink .wallet,body.eink .coinsline,body.eink .knew,body.eink .pointspop,body.eink .footnote{display:none !important}
 </style>
 </head>
 <body>
@@ -349,9 +392,19 @@
         <label class="switch"><input type="checkbox" id="tgJuego" checked><span class="slider"></span></label>
       </div>
       <div class="toggle-row">
+        <div class="lab">⏱ Tiempo por pregunta
+          <small>Desactívalo para responder sin cronómetro ni presión</small></div>
+        <label class="switch"><input type="checkbox" id="tgTiempo" checked><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
         <div class="lab">🔊 Sonidos
           <small>Aviso suave de acierto y de fallo</small></div>
         <label class="switch"><input type="checkbox" id="tgSonido" checked><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="lab">📖 Modo Kindle (e-ink)
+          <small>Vista simple en blanco y negro, sin animaciones ni tiempo. También con el botón 📖 dentro del repaso</small></div>
+        <label class="switch"><input type="checkbox" id="tgEink"><span class="slider"></span></label>
       </div>
 
       <button class="go" id="startBtn" disabled>Empezar repaso</button>
@@ -374,6 +427,7 @@
         <div class="progtop"><span id="pgLabel">Tarjeta 1</span><span><b id="pgCur">1</b>/<span id="pgTot">30</span></span></div>
         <div class="progbar"><i id="pgBar"></i></div>
       </div>
+      <button class="iconbtn" id="einkBtn" title="Modo Kindle (e-ink)" aria-label="Alternar modo Kindle">📖</button>
     </div>
 
     <!-- HUD del modo juego -->
