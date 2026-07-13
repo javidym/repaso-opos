@@ -10,7 +10,7 @@
   var TEMAS = window.TEMAS || [];
   var PREGUNTAS = window.PREGUNTAS || [];
   var LETRAS = ['A', 'B', 'C', 'D', 'E'];
-  var QTIME = 40;
+  var QTIME = 60;
 
   var st = {
     seleccion: new Set(),
@@ -284,12 +284,11 @@
     $('pgBar').style.width = ((st.i) / st.mazo.length * 100) + '%';
     var badge = { dom: '🟢', fal: '🔴', nue: '⚪' }[estadoDe(q.id)] || '';
     $('temaChip').textContent = badge + ' ' + etiquetaTema(q.tema) + ' · ' + temaTitulo(q.tema);
-    updateFavBtn(q);
     $('qText').textContent = q.q; renderBack(q, st.respondidas.hasOwnProperty(q.id) ? st.respondidas[q.id] : null); $('qIdx').textContent = '#' + (st.i + 1);
     $('tapHint').textContent = 'Toca la tarjeta para ver la respuesta'; $('tapHint').className = 'tap-hint pulse';
     $('pointsPop').className = 'pointspop'; $('pointsPop').textContent = '';
     hide('infoMsg'); $('infoMsg').textContent = '';
-    hide('knewWrap'); hide('optsWrap'); $('optsWrap').innerHTML = '';
+    hide('knewWrap'); hide('postActions'); hide('optsWrap'); $('optsWrap').innerHTML = '';
     if (st.juegoEf) {
       show('hud');
       hide('showTest'); hide('navFlash'); hide('nextBtn'); $('nextBtn').textContent = 'Siguiente ▶';
@@ -304,6 +303,7 @@
       $('knowBtn').classList.toggle('on', st.sabidas[q.id] === true);
       $('dunnoBtn').classList.toggle('on', st.sabidas[q.id] === false);
       $('prevBtn').disabled = st.i === 0;
+      show('postActions'); updatePostActions(q);   // en modo tarjeta, borrar/me gusta siempre disponibles
     }
   }
   function formatAnswer(a) { return a.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
@@ -390,13 +390,14 @@
     pop('+' + pts + (st.streak >= 2 ? ' 🔥×' + st.streak : ''), doubled ? 'bonus' : '');
     updateScoreUI(); updateCoinsUI(); renderLifes();
     if (st.streak % 5 === 0 && st.streak !== st.lastMile) { st.lastMile = st.streak; grantBonus(); }
-    show('knewWrap');
+    show('knewWrap'); show('postActions'); updatePostActions(q);
   }
   function onWrong(q, timeout) {
     st.sabidas[q.id] = false;
     if (st.shield) { st.shield = false; st.shieldUsed++; pop('🛡️ Protegido (racha a salvo)', 'bonus'); sfx('life'); }
     else { st.streak = 0; sfx('bad'); pop(timeout ? '⏱ ¡Tiempo!' : '✗ Fallo', 'bad'); }
     updateScoreUI(); renderLifes(); $('nextBtn').textContent = 'Siguiente ▶'; show('nextBtn');
+    show('postActions'); updatePostActions(q);
   }
   function onTimeout() {
     if (st.answered) return; st.answered = true; var q = st.mazo[st.i];
@@ -474,18 +475,17 @@
   }
   function mark(known) { st.sabidas[st.mazo[st.i].id] = known; go(1); }
   function knew(yes) { st.sabidas[st.mazo[st.i].id] = yes; go(1); }
-  function updateFavBtn(q) {
-    var fb = $('favBtn'); if (!fb || !q) return;
+  function updatePostActions(q) {
+    var lb = $('likeBtn'); if (!lb || !q) return;
     var isf = favorites.has(q.id);
-    fb.classList.toggle('fav', isf);
-    fb.textContent = isf ? '⭐' : '☆';
-    fb.title = isf ? 'Quitar de mis buenas' : 'Marcar como buena pregunta';
+    lb.classList.toggle('on', isf);
+    lb.textContent = isf ? '⭐ Guardada' : '⭐ Me gusta';
   }
   function toggleFav() {
     var q = st.mazo[st.i]; if (!q) return;
     if (favorites.has(q.id)) favorites.delete(q.id);
     else { favorites.add(q.id); sfx('life'); }
-    saveFav(); updateFavBtn(q);
+    saveFav(); updatePostActions(q);
   }
   function discardCurrent() {
     var q = st.mazo[st.i]; if (!q) return;
@@ -532,8 +532,8 @@
     $('knewYes').addEventListener('click', function () { knew(true); });
     $('knewLuck').addEventListener('click', function () { knew(false); });
     $('ttsBtn').addEventListener('click', speak);
-    $('favBtn').addEventListener('click', toggleFav);
-    $('discardBtn').addEventListener('click', discardCurrent);
+    $('likeBtn').addEventListener('click', toggleFav);
+    $('discBtn').addEventListener('click', discardCurrent);
     $('einkBtn').addEventListener('click', function () {
       st.eink = !st.eink; applyEink(); saveCfg();
       st.juegoEf = st.juego && !st.eink; stopTimer(); renderCard();   // aplica el cambio en la tarjeta actual
