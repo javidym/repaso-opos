@@ -195,6 +195,7 @@
   .miniact{width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);
     font-size:15px;display:grid;place-items:center;color:var(--ink)}
   .miniact.on{border-color:var(--azul);color:var(--azul)}
+  .miniact.fav{border-color:var(--dorado);color:var(--dorado);background:color-mix(in srgb,var(--dorado) 15%,var(--panel))}
   .miniact:active{transform:scale(.94)}
 
   .pointspop{text-align:center;font-size:20px;font-weight:800;color:var(--verde);height:24px;margin-top:6px;opacity:0;transition:opacity .2s;pointer-events:none}
@@ -339,7 +340,7 @@
       </div>
       <div class="toggle-row">
         <div class="lab">Repaso inteligente
-          <small>Prioriza las falladas y las que llevas sin ver</small></div>
+          <small>Prioriza falladas y sin ver; al repetir, tus ⭐ buenas</small></div>
         <label class="switch"><input type="checkbox" id="tgSmart" checked><span class="slider"></span></label>
       </div>
       <div class="toggle-row">
@@ -355,6 +356,7 @@
 
       <button class="go" id="startBtn" disabled>Empezar repaso</button>
       <button class="go sec hidden" id="failBtn">🔴 Repasar solo mis falladas</button>
+      <button class="go sec hidden" id="favBtnHome" style="background:linear-gradient(135deg,var(--dorado),#b8922f);color:#0e1726">⭐ Repasar solo mis buenas</button>
       <div class="selinfo" id="selInfo">Selecciona al menos un tema</div>
       <div class="progsum hidden" id="progSum"></div>
       <span class="reset hidden" id="resetProg">Reiniciar mi progreso</span>
@@ -388,6 +390,7 @@
     <div class="chiprow">
       <span class="temachip" id="temaChip">Tema</span>
       <div class="cardacts">
+        <button class="miniact" id="favBtn" title="Marcar como buena pregunta" aria-label="Marcar como buena pregunta">☆</button>
         <button class="miniact" id="ttsBtn" title="Escuchar" aria-label="Escuchar la pregunta">🗣️</button>
         <button class="miniact" id="discardBtn" title="Descartar" aria-label="Descartar la pregunta">🗑️</button>
       </div>

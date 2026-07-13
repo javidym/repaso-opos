@@ -23,6 +23,7 @@
 
   var stats = {};                 // progreso por pregunta
   var discarded = new Set();      // ids descartados
+  var favorites = new Set();      // ids marcados como "buena pregunta"
   var inv = {};                   // inventario de comodines (persistente)
   var coins = 0;                  // monedas (persistente)
 
@@ -95,7 +96,7 @@
   function stopSpeak() { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); speaking = false; var b = $('ttsBtn'); if (b) b.classList.remove('on'); }
 
   /* ---------------- PERSISTENCIA ---------------- */
-  var LS = 'repasoOpos.cfg', LS_STATS = 'repasoOpos.stats', LS_DISC = 'repasoOpos.discarded', LS_INV = 'repasoOpos.inv', LS_COINS = 'repasoOpos.coins';
+  var LS = 'repasoOpos.cfg', LS_STATS = 'repasoOpos.stats', LS_DISC = 'repasoOpos.discarded', LS_INV = 'repasoOpos.inv', LS_COINS = 'repasoOpos.coins', LS_FAV = 'repasoOpos.fav';
   function saveCfg() { try { localStorage.setItem(LS, JSON.stringify({ sel: Array.from(st.seleccion), size: st.size, test: st.modoTest, shuffle: st.barajar, smart: st.smart, juego: st.juego, sonido: st.sonido })); } catch (e) {} }
   function loadCfg() {
     try {
@@ -109,6 +110,8 @@
   function saveStats() { try { localStorage.setItem(LS_STATS, JSON.stringify(stats)); } catch (e) {} }
   function loadDisc() { try { (JSON.parse(localStorage.getItem(LS_DISC) || '[]') || []).forEach(function (id) { discarded.add(id); }); } catch (e) {} }
   function saveDisc() { try { localStorage.setItem(LS_DISC, JSON.stringify(Array.from(discarded))); } catch (e) {} }
+  function loadFav() { try { (JSON.parse(localStorage.getItem(LS_FAV) || '[]') || []).forEach(function (id) { favorites.add(id); }); } catch (e) {} }
+  function saveFav() { try { localStorage.setItem(LS_FAV, JSON.stringify(Array.from(favorites))); } catch (e) {} }
   function loadInv() {
     var d = { c5050: 3, cpub: 2, ctel: 1, cx2: 1, csh: 1, ctime: 2 };
     try { var s = localStorage.getItem(LS_INV); if (s) { var o = JSON.parse(s) || {}; LIFEDEF.forEach(function (l) { inv[l.key] = typeof o[l.key] === 'number' ? o[l.key] : 0; }); } else { inv = d; saveInv(); } } catch (e) { inv = d; }
@@ -166,16 +169,18 @@
   }
   function poolSeleccion() { var p = []; for (var k = 0; k < PREGUNTAS.length; k++) { var q = PREGUNTAS[k]; if (st.seleccion.has(q.tema) && !discarded.has(q.id)) p.push(q); } return p; }
   function poolFalladas() { return poolSeleccion().filter(function (q) { return estadoDe(q.id) === 'fal'; }); }
+  function poolFavoritas() { return poolSeleccion().filter(function (q) { return favorites.has(q.id); }); }
   function updateSelInfo() {
     var pool = poolSeleccion(), info = $('selInfo');
     if (discarded.size) { $('discCount').textContent = discarded.size; show('restoreDisc'); } else hide('restoreDisc');
-    if (!st.seleccion.size) { $('startBtn').disabled = true; info.textContent = 'Selecciona al menos un tema'; hide('failBtn'); hide('progSum'); hide('resetProg'); return; }
+    if (!st.seleccion.size) { $('startBtn').disabled = true; info.textContent = 'Selecciona al menos un tema'; hide('failBtn'); hide('favBtnHome'); hide('progSum'); hide('resetProg'); return; }
     $('startBtn').disabled = false;
     var n = st.seleccion.size, toma = st.size === 0 ? pool.length : Math.min(st.size, pool.length);
     info.textContent = n + (n === 1 ? ' tema' : ' temas') + ' · ' + pool.length + ' preguntas · esta sesión: ' + toma;
-    var dom = 0, fal = 0, nue = 0; pool.forEach(function (q) { var e = estadoDe(q.id); if (e === 'dom') dom++; else if (e === 'fal') fal++; else nue++; });
-    $('progSum').innerHTML = '<span class="d">🟢 <b>' + dom + '</b> dominadas</span><span class="f">🔴 <b>' + fal + '</b> falladas</span><span>⚪ <b>' + nue + '</b> sin ver</span>'; show('progSum');
+    var dom = 0, fal = 0, nue = 0, fav = 0; pool.forEach(function (q) { var e = estadoDe(q.id); if (e === 'dom') dom++; else if (e === 'fal') fal++; else nue++; if (favorites.has(q.id)) fav++; });
+    $('progSum').innerHTML = '<span class="d">🟢 <b>' + dom + '</b> dominadas</span><span class="f">🔴 <b>' + fal + '</b> falladas</span><span>⚪ <b>' + nue + '</b> sin ver</span>' + (fav ? '<span style="color:var(--dorado)">⭐ <b>' + fav + '</b> buenas</span>' : ''); show('progSum');
     if (fal > 0) { $('failBtn').textContent = '🔴 Repasar solo mis falladas (' + fal + ')'; $('failBtn').disabled = false; show('failBtn'); } else hide('failBtn');
+    if (fav > 0) { $('favBtnHome').textContent = '⭐ Repasar solo mis buenas (' + fav + ')'; $('favBtnHome').disabled = false; show('favBtnHome'); } else hide('favBtnHome');
     if (dom + fal > 0 || Object.keys(stats).length) show('resetProg'); else hide('resetProg');
   }
 
@@ -193,6 +198,7 @@
     });
     $('startBtn').addEventListener('click', function () { startSession(poolSeleccion(), false); });
     $('failBtn').addEventListener('click', function () { var f = poolFalladas(); if (!f.length) { alert('No tienes falladas en los temas elegidos. ¡Bien!'); return; } startSession(f, false); });
+    $('favBtnHome').addEventListener('click', function () { var f = poolFavoritas(); if (!f.length) { alert('Aún no has marcado ninguna pregunta como buena. Toca la ☆ en una tarjeta para marcarla.'); return; } startSession(f, false); });
     $('resetProg').addEventListener('click', function () { if (confirm('¿Reiniciar TODO tu progreso (aciertos y fallos)? No se puede deshacer.')) { stats = {}; saveStats(); renderTemas(); } });
     $('restoreDisc').addEventListener('click', function () { if (confirm('¿Restaurar las ' + discarded.size + ' preguntas descartadas?')) { discarded = new Set(); saveDisc(); renderTemas(); } });
     $('shopBtn').addEventListener('click', openShop);
@@ -224,9 +230,17 @@
   /* ---------------- SESIÓN ---------------- */
   function ordenarMazo(pool) {
     if (st.smart) {
-      var g = { fal: [], nue: [], dom: [] };
-      pool.forEach(function (q) { g[estadoDe(q.id)].push(q); });
-      return shuffle(g.fal).concat(shuffle(g.nue), shuffle(g.dom)); // falladas primero, pero barajadas cada vez
+      // falladas → sin ver → ⭐ buenas (ya vistas) → resto dominadas.
+      // Así, cuando ya has visto todo y empieza a repetirse, salen antes tus buenas.
+      var g = { fal: [], nue: [], favDom: [], dom: [] };
+      pool.forEach(function (q) {
+        var e = estadoDe(q.id);
+        if (e === 'fal') g.fal.push(q);
+        else if (e === 'nue') g.nue.push(q);
+        else if (favorites.has(q.id)) g.favDom.push(q);
+        else g.dom.push(q);
+      });
+      return shuffle(g.fal).concat(shuffle(g.nue), shuffle(g.favDom), shuffle(g.dom)); // barajadas dentro de cada grupo
     }
     return st.barajar ? shuffle(pool) : pool.slice();
   }
@@ -253,6 +267,7 @@
     $('pgBar').style.width = ((st.i) / st.mazo.length * 100) + '%';
     var badge = { dom: '🟢', fal: '🔴', nue: '⚪' }[estadoDe(q.id)] || '';
     $('temaChip').textContent = badge + ' ' + etiquetaTema(q.tema) + ' · ' + temaTitulo(q.tema);
+    updateFavBtn(q);
     $('qText').textContent = q.q; renderBack(q, st.respondidas.hasOwnProperty(q.id) ? st.respondidas[q.id] : null); $('qIdx').textContent = '#' + (st.i + 1);
     $('tapHint').textContent = 'Toca la tarjeta para ver la respuesta'; $('tapHint').className = 'tap-hint pulse';
     $('pointsPop').className = 'pointspop'; $('pointsPop').textContent = '';
@@ -440,10 +455,23 @@
   }
   function mark(known) { st.sabidas[st.mazo[st.i].id] = known; go(1); }
   function knew(yes) { st.sabidas[st.mazo[st.i].id] = yes; go(1); }
+  function updateFavBtn(q) {
+    var fb = $('favBtn'); if (!fb || !q) return;
+    var isf = favorites.has(q.id);
+    fb.classList.toggle('fav', isf);
+    fb.textContent = isf ? '⭐' : '☆';
+    fb.title = isf ? 'Quitar de mis buenas' : 'Marcar como buena pregunta';
+  }
+  function toggleFav() {
+    var q = st.mazo[st.i]; if (!q) return;
+    if (favorites.has(q.id)) favorites.delete(q.id);
+    else { favorites.add(q.id); sfx('life'); }
+    saveFav(); updateFavBtn(q);
+  }
   function discardCurrent() {
     var q = st.mazo[st.i]; if (!q) return;
     if (!confirm('¿Descartar esta pregunta para que no vuelva a salir? Podrás restaurarla desde el inicio.')) return;
-    discarded.add(q.id); saveDisc(); st.committed[q.id] = true;
+    discarded.add(q.id); saveDisc(); favorites.delete(q.id); saveFav(); st.committed[q.id] = true;
     st.mazo.splice(st.i, 1); $('pgTot').textContent = st.mazo.length;
     if (!st.mazo.length) { finish(); return; }
     if (st.i >= st.mazo.length) st.i = st.mazo.length - 1; renderCard();
@@ -485,6 +513,7 @@
     $('knewYes').addEventListener('click', function () { knew(true); });
     $('knewLuck').addEventListener('click', function () { knew(false); });
     $('ttsBtn').addEventListener('click', speak);
+    $('favBtn').addEventListener('click', toggleFav);
     $('discardBtn').addEventListener('click', discardCurrent);
     $('exitBtn').addEventListener('click', function () { if (confirm('¿Salir? Se guardará el progreso de lo respondido.')) { commitCard(st.mazo[st.i].id); stopTimer(); stopSpeak(); hide('study'); show('home'); renderTemas(); } });
     var x0 = null, scene = document.querySelector('.scene');
@@ -515,7 +544,7 @@
       if (qa !== qb) return qa - qb;   // los mazos ⚡ (Repaso rápido y Glosario) van primero
       return a.n - b.n;
     });
-    loadStats(); loadDisc(); loadInv(); loadCoins(); loadCfg();
+    loadStats(); loadDisc(); loadFav(); loadInv(); loadCoins(); loadCfg();
     document.addEventListener('pointerdown', function once() { audio(); document.removeEventListener('pointerdown', once); });
     bindHome(); bindStudy(); bindResults(); renderTemas(); updateCoinsUI();
   }
