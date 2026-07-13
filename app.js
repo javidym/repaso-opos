@@ -510,7 +510,11 @@
 
   function init() {
     if (!TEMAS.length || !PREGUNTAS.length) { $('temaList').innerHTML = '<div class="empty">No se han cargado las preguntas.<br>Revisa <b>data/preguntas.js</b>.</div>'; return; }
-    TEMAS.sort(function (a, b) { return a.n - b.n; });
+    TEMAS.sort(function (a, b) {
+      var qa = /^⚡/.test(a.bloque || '') ? 0 : 1, qb = /^⚡/.test(b.bloque || '') ? 0 : 1;
+      if (qa !== qb) return qa - qb;   // los mazos ⚡ (Repaso rápido y Glosario) van primero
+      return a.n - b.n;
+    });
     loadStats(); loadDisc(); loadInv(); loadCoins(); loadCfg();
     document.addEventListener('pointerdown', function once() { audio(); document.removeEventListener('pointerdown', once); });
     bindHome(); bindStudy(); bindResults(); renderTemas(); updateCoinsUI();
