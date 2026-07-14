@@ -313,29 +313,29 @@
   body.eink *{animation:none !important;transition:none !important;box-shadow:none !important;text-shadow:none !important}
   body.eink .brand .logo{background:#fff !important;border:2px solid #000}
   body.eink .blk-h .ln{background:#000}
-  /* tarjeta sin volteo 3D: pregunta y respuesta apiladas */
-  body.eink .scene{perspective:none;display:block;min-height:0}
-  body.eink .card3d{transform:none !important;transform-style:flat}
+  /* Kindle: la pantalla de estudio ocupa toda la altura disponible */
+  body.eink #study{display:flex;flex-direction:column;flex:1}
+  /* tarjeta sin volteo 3D: la pregunta crece para rellenar el hueco */
+  body.eink .scene{perspective:none;display:flex;flex-direction:column;min-height:0;flex:1 1 auto}
+  body.eink .card3d{transform:none !important;transform-style:flat;display:flex;flex-direction:column;flex:1}
   body.eink .face{position:static;-webkit-backface-visibility:visible;backface-visibility:visible;
-    transform:none !important;border:2px solid #000;border-radius:8px;background:#fff !important;margin-bottom:12px;overflow:visible}
+    transform:none !important;border:2px solid #000;border-radius:8px;background:#fff !important;margin-bottom:10px;overflow:visible;padding:18px}
   body.eink .back{display:none;background:#fff !important}
   body.eink .card3d.flip .back{display:flex}
-  body.eink .front .qtext{font-size:18px;color:#000}
-  /* compacto para caber en la pantalla de 7" del Paperwhite */
-  body.eink .topbar{margin-bottom:8px}
-  body.eink .temachip{margin-bottom:6px}
-  body.eink .hud{padding:6px 8px;margin-bottom:8px}
-  body.eink .hudtop{gap:8px}
-  body.eink .hpts{font-size:18px}
-  body.eink .scene{min-height:0}
-  body.eink .face{padding:12px;margin-bottom:8px}
-  body.eink .opts{margin-top:8px;gap:6px}
-  body.eink .opt{padding:9px 10px;font-size:13px}
-  body.eink .opt .k{width:20px;height:20px;font-size:11px}
-  body.eink .tap-hint{margin-top:6px;font-size:11px}
-  body.eink .studyfoot{margin-top:8px}
-  body.eink .postacts{margin-top:8px;gap:6px}
-  body.eink .postacts .pa{padding:11px 8px;font-size:12.5px}
+  body.eink .front{flex:1;justify-content:center}
+  body.eink .front .qtext{font-size:21px;color:#000}
+  /* tamaños cómodos para el Paperwhite */
+  body.eink .topbar{margin-bottom:10px}
+  body.eink .temachip{margin-bottom:8px}
+  body.eink .hud{padding:8px 10px;margin-bottom:10px}
+  body.eink .hpts{font-size:19px}
+  body.eink .opts{margin-top:10px;gap:8px}
+  body.eink .opt{padding:13px 12px;font-size:15px}
+  body.eink .opt .k{width:24px;height:24px;font-size:12.5px}
+  body.eink .tap-hint{margin-top:8px;font-size:12px}
+  body.eink .studyfoot{margin-top:0}
+  body.eink .postacts{margin-top:10px;gap:8px}
+  body.eink .postacts .pa{padding:15px 8px;font-size:14.5px}
   body.eink .postacts .next{display:block}
   body.eink .flabel,body.eink .back .flabel,body.eink .exlab,body.eink .back .flabel span{color:#000 !important}
   body.eink .temachip{background:#fff;border:1.5px solid #000;color:#000}
