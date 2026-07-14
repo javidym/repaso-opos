@@ -294,6 +294,7 @@
       hide('showTest'); hide('navFlash'); hide('nextBtn'); $('nextBtn').textContent = 'Siguiente ▶';
       buildOptions(q); renderLifes(); updateScoreUI();
       if (st.tiempo && !st.eink) startTimer(); else noTimer();   // en Kindle sin cuenta atrás (evita parpadeo e-ink)
+      if (st.eink) { show('postActions'); updatePostActions(q); }   // barra fija (Buena/Descartar/Siguiente) en Kindle
     } else {
       hide('hud'); hide('nextBtn'); show('navFlash');
       var hasOpts = st.modoTest && q.opciones && q.opciones.length;
@@ -542,6 +543,7 @@
     $('ttsBtn').addEventListener('click', speak);
     $('likeBtn').addEventListener('click', toggleFav);
     $('discBtn').addEventListener('click', discardCurrent);
+    $('paNext').addEventListener('click', function () { go(1); });
     $('einkBtn').addEventListener('click', function () {
       st.eink = !st.eink; applyEink(); saveCfg();
       st.juegoEf = st.juego; stopTimer(); renderCard();   // aplica el cambio en la tarjeta actual

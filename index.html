@@ -220,6 +220,7 @@
   .postacts .like{border-color:var(--dorado);color:var(--dorado);background:color-mix(in srgb,var(--dorado) 10%,var(--panel))}
   .postacts .like.on{background:var(--dorado);color:#0e1726}
   .postacts .disc{border-color:var(--rojo);color:var(--rojo);background:color-mix(in srgb,var(--rojo) 10%,var(--panel))}
+  .postacts .next{display:none;border-color:var(--azul);color:var(--azul);background:color-mix(in srgb,var(--azul) 10%,var(--panel))}
 
   /* controles inferiores */
   .studyfoot{margin-top:14px}
@@ -319,7 +320,23 @@
     transform:none !important;border:2px solid #000;border-radius:8px;background:#fff !important;margin-bottom:12px;overflow:visible}
   body.eink .back{display:none;background:#fff !important}
   body.eink .card3d.flip .back{display:flex}
-  body.eink .front .qtext{font-size:22px;color:#000}
+  body.eink .front .qtext{font-size:18px;color:#000}
+  /* compacto para caber en la pantalla de 7" del Paperwhite */
+  body.eink .topbar{margin-bottom:8px}
+  body.eink .temachip{margin-bottom:6px}
+  body.eink .hud{padding:6px 8px;margin-bottom:8px}
+  body.eink .hudtop{gap:8px}
+  body.eink .hpts{font-size:18px}
+  body.eink .scene{min-height:0}
+  body.eink .face{padding:12px;margin-bottom:8px}
+  body.eink .opts{margin-top:8px;gap:6px}
+  body.eink .opt{padding:9px 10px;font-size:13px}
+  body.eink .opt .k{width:20px;height:20px;font-size:11px}
+  body.eink .tap-hint{margin-top:6px;font-size:11px}
+  body.eink .studyfoot{margin-top:8px}
+  body.eink .postacts{margin-top:8px;gap:6px}
+  body.eink .postacts .pa{padding:11px 8px;font-size:12.5px}
+  body.eink .postacts .next{display:block}
   body.eink .flabel,body.eink .back .flabel,body.eink .exlab,body.eink .back .flabel span{color:#000 !important}
   body.eink .temachip{background:#fff;border:1.5px solid #000;color:#000}
   body.eink .ansok{background:#fff !important;border:2px solid #000}
@@ -347,14 +364,15 @@
   body.eink .timebar,body.eink .pointspop,body.eink .footnote{display:none !important}
   body.eink .hud{background:#fff !important;border:2px solid #000}
   body.eink .hpts,body.eink .hpts small,body.eink .hstreak,body.eink .htime{color:#000 !important}
-  body.eink .life{background:#fff !important;border:2px solid #000 !important;color:#000 !important}
-  body.eink .life .ic,body.eink .life .n{color:#000 !important}
+  body.eink .lifes{gap:5px}
+  body.eink .life{background:#fff !important;border:1.5px solid #000 !important;color:#000 !important;
+    flex-direction:row;min-width:0;flex:1 1 auto;padding:5px 7px;font-size:11px;gap:4px}
+  body.eink .life .ic{display:none}
+  body.eink .life .n{color:#000 !important;font-size:11px}
   body.eink .life.on{background:#000 !important;color:#fff !important}
-  body.eink .life.on .ic,body.eink .life.on .n{color:#fff !important}
-  body.eink .knew{background:#fff !important;border:2px solid #000}
-  body.eink .knew>span{color:#000}
-  body.eink .knewbtns .know{background:#000 !important;color:#fff !important;border-color:#000 !important}
-  body.eink .knewbtns .luck{background:#fff !important;color:#000 !important;border-color:#000 !important}
+  body.eink .life.on .n{color:#fff !important}
+  /* en Kindle se avanza con la barra de abajo (Siguiente); ocultamos el prompt y el botón del juego */
+  body.eink .knew,body.eink .nextbtn{display:none !important}
   body.eink .wallet{background:#fff !important;border:2px solid #000}
   body.eink .wallet span,body.eink .wallet b{color:#000 !important}
   body.eink .wbtn,body.eink .buybtn{background:#fff !important;color:#000 !important;border:2px solid #000 !important}
@@ -507,6 +525,7 @@
     <div id="postActions" class="postacts hidden">
       <button class="pa like" id="likeBtn">⭐ Me gusta</button>
       <button class="pa disc" id="discBtn">🗑️ Descartar</button>
+      <button class="pa next" id="paNext">Siguiente ▶</button>
     </div>
 
     <div class="studyfoot">
