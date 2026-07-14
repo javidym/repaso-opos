@@ -343,8 +343,25 @@
   body.eink .result .ring{background:#fff !important;border:2px solid #000}
   body.eink .postacts .pa{background:#fff !important;color:#000 !important;border:2px solid #000 !important}
   body.eink .postacts .like.on{background:#000 !important;color:#fff !important}
-  /* ocultar lo lúdico/animado en e-ink */
-  body.eink .hud,body.eink .wallet,body.eink .coinsline,body.eink .knew,body.eink .pointspop,body.eink .footnote{display:none !important}
+  /* e-ink: ocultar solo lo que parpadea (cuenta atrás / popups); mantener HUD y comodines */
+  body.eink .timebar,body.eink .pointspop,body.eink .footnote{display:none !important}
+  body.eink .hud{background:#fff !important;border:2px solid #000}
+  body.eink .hpts,body.eink .hpts small,body.eink .hstreak,body.eink .htime{color:#000 !important}
+  body.eink .life{background:#fff !important;border:2px solid #000 !important;color:#000 !important}
+  body.eink .life .ic,body.eink .life .n{color:#000 !important}
+  body.eink .life.on{background:#000 !important;color:#fff !important}
+  body.eink .life.on .ic,body.eink .life.on .n{color:#fff !important}
+  body.eink .knew{background:#fff !important;border:2px solid #000}
+  body.eink .knew>span{color:#000}
+  body.eink .knewbtns .know{background:#000 !important;color:#fff !important;border-color:#000 !important}
+  body.eink .knewbtns .luck{background:#fff !important;color:#000 !important;border-color:#000 !important}
+  body.eink .wallet{background:#fff !important;border:2px solid #000}
+  body.eink .wallet span,body.eink .wallet b{color:#000 !important}
+  body.eink .wbtn,body.eink .buybtn{background:#fff !important;color:#000 !important;border:2px solid #000 !important}
+  body.eink .sheet,body.eink .shopitem{background:#fff !important;border:2px solid #000}
+  body.eink .sheeth h2,body.eink .coinsbig,body.eink .coinsbig small,body.eink .shophint,
+  body.eink .shopitem .sn,body.eink .shopitem .sd,body.eink .shopitem .sown,
+  body.eink .coinsline,body.eink .coinsline b{color:#000 !important}
 </style>
 </head>
 <body>

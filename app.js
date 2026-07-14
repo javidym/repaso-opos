@@ -268,7 +268,7 @@
     st.streak = 0; st.pendingX2 = false; st.shield = false; st.lastMile = 0;
     hide('home'); hide('results'); hide('shop'); show('study');
     $('pgTot').textContent = mazo.length;
-    st.juegoEf = st.juego && !st.eink;               // en modo Kindle se juega como tarjeta simple
+    st.juegoEf = st.juego;                           // el modo juego (comodines) se mantiene también en Kindle
     if (st.juegoEf) show('hud'); else hide('hud');
     window.scrollTo(0, 0); renderCard();
   }
@@ -293,7 +293,7 @@
       show('hud');
       hide('showTest'); hide('navFlash'); hide('nextBtn'); $('nextBtn').textContent = 'Siguiente ▶';
       buildOptions(q); renderLifes(); updateScoreUI();
-      if (st.tiempo) startTimer(); else noTimer();
+      if (st.tiempo && !st.eink) startTimer(); else noTimer();   // en Kindle sin cuenta atrás (evita parpadeo e-ink)
     } else {
       hide('hud'); hide('nextBtn'); show('navFlash');
       var hasOpts = st.modoTest && q.opciones && q.opciones.length;
@@ -544,7 +544,7 @@
     $('discBtn').addEventListener('click', discardCurrent);
     $('einkBtn').addEventListener('click', function () {
       st.eink = !st.eink; applyEink(); saveCfg();
-      st.juegoEf = st.juego && !st.eink; stopTimer(); renderCard();   // aplica el cambio en la tarjeta actual
+      st.juegoEf = st.juego; stopTimer(); renderCard();   // aplica el cambio en la tarjeta actual
     });
     $('exitBtn').addEventListener('click', function () { if (confirm('¿Salir? Se guardará el progreso de lo respondido.')) { commitCard(st.mazo[st.i].id); stopTimer(); stopSpeak(); hide('study'); show('home'); renderTemas(); } });
     var x0 = null, scene = document.querySelector('.scene');
