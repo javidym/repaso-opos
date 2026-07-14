@@ -296,10 +296,18 @@
       if (st.tiempo) startTimer(); else noTimer();
     } else {
       hide('hud'); hide('nextBtn'); show('navFlash');
+      var hasOpts = st.modoTest && q.opciones && q.opciones.length;
       $('showTest').classList.remove('hidden');
-      $('showTest').textContent = st.respondidas.hasOwnProperty(q.id) ? '📝 Opciones' : '📝 Ver opciones (test)';
-      $('showTest').style.display = (st.modoTest && q.opciones && q.opciones.length) ? '' : 'none';
-      if (st.modoTest && st.respondidas.hasOwnProperty(q.id)) { buildOptions(q); revealOptions(q, st.respondidas[q.id]); }
+      if (st.eink && hasOpts) {
+        // Modo Kindle: opciones visibles por defecto, sin botón (menos toques en el táctil)
+        buildOptions(q);
+        if (st.respondidas.hasOwnProperty(q.id)) revealOptions(q, st.respondidas[q.id]);
+        $('showTest').style.display = 'none';
+      } else {
+        $('showTest').textContent = st.respondidas.hasOwnProperty(q.id) ? '📝 Opciones' : '📝 Ver opciones (test)';
+        $('showTest').style.display = hasOpts ? '' : 'none';
+        if (hasOpts && st.respondidas.hasOwnProperty(q.id)) { buildOptions(q); revealOptions(q, st.respondidas[q.id]); }
+      }
       $('knowBtn').classList.toggle('on', st.sabidas[q.id] === true);
       $('dunnoBtn').classList.toggle('on', st.sabidas[q.id] === false);
       $('prevBtn').disabled = st.i === 0;
