@@ -268,7 +268,7 @@
     st.streak = 0; st.pendingX2 = false; st.shield = false; st.lastMile = 0;
     hide('home'); hide('results'); hide('shop'); show('study');
     $('pgTot').textContent = mazo.length;
-    st.juegoEf = st.juego;                           // el modo juego (comodines) se mantiene también en Kindle
+    st.juegoEf = st.juego || st.eink;                // en Kindle SIEMPRE con juego (puntos y comodines, como la versión normal)
     if (st.juegoEf) show('hud'); else hide('hud');
     window.scrollTo(0, 0); renderCard();
   }
@@ -288,7 +288,7 @@
     $('tapHint').textContent = 'Toca la tarjeta para ver la respuesta'; $('tapHint').className = 'tap-hint pulse';
     $('pointsPop').className = 'pointspop'; $('pointsPop').textContent = '';
     hide('infoMsg'); $('infoMsg').textContent = '';
-    hide('knewWrap'); hide('postActions'); hide('optsWrap'); $('optsWrap').innerHTML = '';
+    hide('knewWrap'); hide('postActions'); hide('optsWrap'); $('optsWrap').innerHTML = ''; resetDiscBtn();
     if (st.juegoEf) {
       show('hud');
       hide('showTest'); hide('navFlash'); hide('nextBtn'); $('nextBtn').textContent = 'Siguiente ▶';
@@ -496,9 +496,12 @@
     else { favorites.add(q.id); sfx('life'); }
     saveFav(); updatePostActions(q);
   }
+  function resetDiscBtn() { st.discArm = false; var db = $('discBtn'); if (db) { db.textContent = '🗑️ Descartar'; db.classList.remove('arm'); } }
   function discardCurrent() {
     var q = st.mazo[st.i]; if (!q) return;
-    if (!confirm('¿Descartar esta pregunta para que no vuelva a salir? Podrás restaurarla desde el inicio.')) return;
+    // doble toque: 1º arma («¿Seguro?»), 2º descarta. Sin diálogo nativo, funciona en el Paperwhite.
+    if (!st.discArm) { st.discArm = true; var db = $('discBtn'); if (db) { db.textContent = '🗑️ ¿Seguro?'; db.classList.add('arm'); } return; }
+    st.discArm = false;
     discarded.add(q.id); saveDisc(); favorites.delete(q.id); saveFav(); st.committed[q.id] = true;
     st.mazo.splice(st.i, 1); $('pgTot').textContent = st.mazo.length;
     if (!st.mazo.length) { finish(); return; }
@@ -546,7 +549,7 @@
     $('paNext').addEventListener('click', function () { go(1); });
     $('einkBtn').addEventListener('click', function () {
       st.eink = !st.eink; applyEink(); saveCfg();
-      st.juegoEf = st.juego; stopTimer(); renderCard();   // aplica el cambio en la tarjeta actual
+      st.juegoEf = st.juego || st.eink; stopTimer(); renderCard();   // aplica el cambio en la tarjeta actual
     });
     $('exitBtn').addEventListener('click', function () { if (confirm('¿Salir? Se guardará el progreso de lo respondido.')) { commitCard(st.mazo[st.i].id); stopTimer(); stopSpeak(); hide('study'); show('home'); renderTemas(); } });
     var x0 = null, scene = document.querySelector('.scene');
