@@ -14,8 +14,8 @@
 
   var st = {
     seleccion: new Set(),
-    size: 30, modoTest: true, barajar: true, smart: true, juego: true, sonido: true, tiempo: true, eink: false, juegoEf: true,
-    mazo: [], i: 0, volteada: false,
+    size: 30, modoTest: true, barajar: true, smart: true, juego: true, sonido: true, tiempo: true, eink: false, adapt: false, juegoEf: true,
+    mazo: [], i: 0, volteada: false, cardStart: 0, repeatCount: {}, repInjected: 0,
     respondidas: {}, sabidas: {}, committed: {}, cardUsed: {},
     score: 0, streak: 0, best: 0, shieldUsed: 0,
     pendingX2: false, shield: false, answered: false, timer: null, timeLeft: QTIME, lastMile: 0
@@ -121,13 +121,13 @@
 
   /* ---------------- PERSISTENCIA ---------------- */
   var LS = 'repasoOpos.cfg', LS_STATS = 'repasoOpos.stats', LS_DISC = 'repasoOpos.discarded', LS_INV = 'repasoOpos.inv', LS_COINS = 'repasoOpos.coins', LS_FAV = 'repasoOpos.fav', LS_COSMET = 'repasoOpos.cosmet';
-  function saveCfg() { try { localStorage.setItem(LS, JSON.stringify({ sel: Array.from(st.seleccion), size: st.size, test: st.modoTest, shuffle: st.barajar, smart: st.smart, juego: st.juego, sonido: st.sonido, tiempo: st.tiempo, eink: st.eink })); } catch (e) {} }
+  function saveCfg() { try { localStorage.setItem(LS, JSON.stringify({ sel: Array.from(st.seleccion), size: st.size, test: st.modoTest, shuffle: st.barajar, smart: st.smart, juego: st.juego, sonido: st.sonido, tiempo: st.tiempo, eink: st.eink, adapt: st.adapt })); } catch (e) {} }
   function loadCfg() {
     try {
       var c = JSON.parse(localStorage.getItem(LS) || '{}');
       if (c.sel) c.sel.forEach(function (n) { if (countTema(n)) st.seleccion.add(n); });
       if (typeof c.size === 'number') st.size = c.size;
-      ['test:modoTest', 'shuffle:barajar', 'smart:smart', 'juego:juego', 'sonido:sonido', 'tiempo:tiempo', 'eink:eink'].forEach(function (p) { var k = p.split(':'); if (typeof c[k[0]] === 'boolean') st[k[1]] = c[k[0]]; });
+      ['test:modoTest', 'shuffle:barajar', 'smart:smart', 'juego:juego', 'sonido:sonido', 'tiempo:tiempo', 'eink:eink', 'adapt:adapt'].forEach(function (p) { var k = p.split(':'); if (typeof c[k[0]] === 'boolean') st[k[1]] = c[k[0]]; });
     } catch (e) {}
   }
   function loadStats() { try { stats = JSON.parse(localStorage.getItem(LS_STATS) || '{}') || {}; } catch (e) { stats = {}; } }
@@ -229,7 +229,7 @@
       if (parseInt(b.dataset.n, 10) === st.size) { Array.prototype.forEach.call($('sizeSeg').children, function (x) { x.classList.remove('on'); }); b.classList.add('on'); }
       b.addEventListener('click', function () { Array.prototype.forEach.call($('sizeSeg').children, function (x) { x.classList.remove('on'); }); b.classList.add('on'); st.size = parseInt(b.dataset.n, 10); updateSelInfo(); saveCfg(); });
     });
-    var tg = { tgTest: 'modoTest', tgShuffle: 'barajar', tgSmart: 'smart', tgJuego: 'juego', tgSonido: 'sonido', tgTiempo: 'tiempo' };
+    var tg = { tgTest: 'modoTest', tgShuffle: 'barajar', tgSmart: 'smart', tgJuego: 'juego', tgSonido: 'sonido', tgTiempo: 'tiempo', tgAdapt: 'adapt' };
     Object.keys(tg).forEach(function (id) { $(id).checked = st[tg[id]]; $(id).addEventListener('change', function () { st[tg[id]] = this.checked; saveCfg(); }); });
     $('tgEink').checked = st.eink;
     $('tgEink').addEventListener('change', function () { st.eink = this.checked; applyEink(); saveCfg(); renderTemas(); });
@@ -321,7 +321,7 @@
   function startSession(pool, keepScore) {
     if (!pool || !pool.length) return;
     var mazo = ordenarMazo(pool); if (st.size > 0) mazo = mazo.slice(0, st.size);
-    st.mazo = mazo; st.i = 0; st.respondidas = {}; st.sabidas = {}; st.committed = {};
+    st.mazo = mazo; st.i = 0; st.respondidas = {}; st.sabidas = {}; st.committed = {}; st.repeatCount = {}; st.repInjected = 0;
     if (!keepScore) { st.score = 0; st.best = 0; st.shieldUsed = 0; }   // el repaso de falladas continúa la puntuación
     st.streak = 0; st.pendingX2 = false; st.shield = false; st.lastMile = 0;
     hide('home'); hide('results'); hide('shop'); show('study');
@@ -335,13 +335,14 @@
   function renderCard() {
     stopTimer(); stopSpeak();
     var q = st.mazo[st.i];
-    st.volteada = false; st.answered = false; st.cardUsed = {};
+    st.volteada = false; st.answered = false; st.cardUsed = {}; st.cardStart = Date.now();
     st.order = makeOrder(q); st.correctDisp = st.order.indexOf(q.correcta);   // barajar opciones cada vez
     $('card3d').classList.remove('flip');
     $('pgCur').textContent = st.i + 1; $('pgLabel').textContent = 'Tarjeta ' + (st.i + 1);
     $('pgBar').style.width = ((st.i) / st.mazo.length * 100) + '%';
     var badge = { dom: '🟢', fal: '🔴', nue: '⚪' }[estadoDe(q.id)] || '';
-    $('temaChip').textContent = badge + ' ' + etiquetaTema(q.tema) + ' · ' + temaTitulo(q.tema);
+    var esRepeat = st.juegoEf && st.respondidas.hasOwnProperty(q.id);   // ya contestada en esta partida → repaso adaptativo
+    $('temaChip').textContent = (esRepeat ? '🔁 Repaso · ' : '') + badge + ' ' + etiquetaTema(q.tema) + ' · ' + temaTitulo(q.tema);
     $('qText').textContent = q.q; renderBack(q, st.respondidas.hasOwnProperty(q.id) ? st.respondidas[q.id] : null); $('qIdx').textContent = '#' + (st.i + 1);
     $('tapHint').textContent = 'Toca la tarjeta para ver la respuesta'; $('tapHint').className = 'tap-hint pulse';
     $('pointsPop').className = 'pointspop'; $('pointsPop').textContent = '';
@@ -402,6 +403,24 @@
     });
     show('optsWrap');
   }
+  // Repaso adaptativo: re-inyecta una pregunta "dura" unas cartas más adelante en la misma partida.
+  function scheduleRepeat(q) {
+    if (!st.adapt || !st.juegoEf) return;
+    var id = q.id;
+    if ((st.repeatCount[id] || 0) >= 2) return;              // máximo 2 repasos por pregunta
+    st.repeatCount[id] = (st.repeatCount[id] || 0) + 1;
+    var off = 3 + Math.floor(Math.random() * 4);            // 3-6 cartas más adelante
+    var pos = Math.min(st.i + off, st.mazo.length);
+    st.mazo.splice(pos, 0, q);
+    st.repInjected = (st.repInjected || 0) + 1;
+    $('pgTot').textContent = st.mazo.length;                // cuenta como una pregunta más
+  }
+  function esDura(q, idx, timeout) {
+    var fallo = timeout || idx !== q.correcta;
+    var comodin = Object.keys(st.cardUsed || {}).length > 0;
+    var lenta = (Date.now() - (st.cardStart || Date.now())) > 20000;   // más de 20 s
+    return fallo || comodin || lenta;
+  }
   function onAnswer(q, idx, btn) {
     if (st.juegoEf && st.answered) return;
     if (!st.juegoEf && st.respondidas.hasOwnProperty(q.id)) return;
@@ -410,6 +429,7 @@
       st.answered = true; stopTimer(); if (btn) btn.classList.add('picked');
       revealOptions(q, idx); renderBack(q, idx); disableLifes();
       if (idx === q.correcta) onCorrect(q); else onWrong(q, false);
+      if (esDura(q, idx, false)) scheduleRepeat(q);
       hintExpl();
     } else { revealOptions(q, idx); renderBack(q, idx); }
   }
@@ -486,7 +506,7 @@
     if (st.answered) return; st.answered = true; var q = st.mazo[st.i];
     var btns = $('optsWrap').children;
     for (var i = 0; i < btns.length; i++) { var b = btns[i]; b.classList.add('lock'); if (parseInt(b.dataset.orig, 10) === q.correcta) b.classList.add('correct'); else b.classList.add('dim'); }
-    renderBack(q, null); disableLifes(); onWrong(q, true); hintExpl();
+    renderBack(q, null); disableLifes(); onWrong(q, true); scheduleRepeat(q); hintExpl();
   }
   function grantBonus() {
     var keys = ['c5050', 'cpub', 'ctel', 'cx2', 'csh', 'ctime'];
@@ -594,7 +614,7 @@
     hide('study'); show('results');
     $('ring').style.setProperty('--pct', pct + '%'); $('ringPct').textContent = pct + '%';
     $('stKnow').textContent = know; $('stDunno').textContent = dunno; $('stTest').textContent = testTot ? (testOk + '/' + testTot) : '—';
-    $('resSub').textContent = evaluadas ? ('Sabías ' + know + ' de ' + evaluadas + ' tarjetas · progreso guardado') : 'Progreso guardado';
+    $('resSub').textContent = (evaluadas ? ('Sabías ' + know + ' de ' + evaluadas + ' tarjetas · progreso guardado') : 'Progreso guardado') + (st.repInjected ? ' · 🔁 ' + st.repInjected + ' repasos' : '');
     $('resTemas').textContent = Array.from(st.seleccion).sort(function (a, b) { return a - b; }).map(function (n) { return n === 0 ? 'REPASO' : 'T' + n; }).join(' · ') + ' · ' + total + ' tarjetas';
     if (st.juegoEf) {
       show('gameScore'); $('resScore').textContent = st.score; $('resStreak').textContent = st.best; $('resShield').textContent = st.shieldUsed;
