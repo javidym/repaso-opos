@@ -340,7 +340,7 @@
   function startSession(pool, keepScore) {
     if (!pool || !pool.length) return;
     var mazo = buildDeck(pool);
-    st.mazo = mazo; st.i = 0; st.respondidas = {}; st.sabidas = {}; st.committed = {}; st.repeatCount = {}; st.repInjected = 0;
+    st.mazo = mazo; st.deckSize = mazo.length; st.i = 0; st.respondidas = {}; st.sabidas = {}; st.committed = {}; st.repeatCount = {}; st.repInjected = 0;
     if (!keepScore) { st.score = 0; st.best = 0; st.shieldUsed = 0; }   // el repaso de falladas continúa la puntuación
     st.streak = 0; st.pendingX2 = false; st.shield = false; st.lastMile = 0;
     hide('home'); hide('results'); hide('shop'); show('study');
@@ -426,19 +426,21 @@
   function scheduleRepeat(q) {
     if (!st.adapt || !st.juegoEf) return;
     var id = q.id;
-    if ((st.repeatCount[id] || 0) >= 2) return;              // máximo 2 repasos por pregunta
+    if ((st.repeatCount[id] || 0) >= 1) return;              // como máximo 1 repaso por pregunta
+    if (st.mazo.length - st.i < 4) return;                   // muy cerca del final: no hay hueco
+    var maxOff = st.mazo.length - 1 - st.i;                  // insertar antes de la última carta
+    var off = Math.min(3 + Math.floor(Math.random() * 4), maxOff);   // 3-6 cartas más adelante
+    st.mazo.splice(st.i + off, 0, q);
+    // el total NO crece: quitamos una carta futura para que el test mantenga su tamaño
+    if (st.deckSize && st.mazo.length > st.deckSize) st.mazo.pop();
     st.repeatCount[id] = (st.repeatCount[id] || 0) + 1;
-    var off = 3 + Math.floor(Math.random() * 4);            // 3-6 cartas más adelante
-    var pos = Math.min(st.i + off, st.mazo.length);
-    st.mazo.splice(pos, 0, q);
     st.repInjected = (st.repInjected || 0) + 1;
-    $('pgTot').textContent = st.mazo.length;                // cuenta como una pregunta más
+    $('pgTot').textContent = st.mazo.length;
   }
   function esDura(q, idx, timeout) {
     var fallo = timeout || idx !== q.correcta;
     var comodin = Object.keys(st.cardUsed || {}).length > 0;
-    var lenta = (Date.now() - (st.cardStart || Date.now())) > 20000;   // más de 20 s
-    return fallo || comodin || lenta;
+    return fallo || comodin;   // solo si fallas o usas comodín (ya no por tardar)
   }
   function onAnswer(q, idx, btn) {
     if (st.juegoEf && st.answered) return;
