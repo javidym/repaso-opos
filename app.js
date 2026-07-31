@@ -318,9 +318,28 @@
     }
     return st.barajar ? shuffle(pool) : pool.slice();
   }
+  // Compone el mazo de la sesión: reserva ~20% para preguntas ya contestadas (dominadas)
+  // para ir repasándolas poco a poco, y el 80% con la prioridad normal (falladas + sin ver).
+  function buildDeck(pool) {
+    var ordered = ordenarMazo(pool);
+    var size = st.size;
+    if (size <= 0) return ordered;                 // "Todas": sin recorte
+    if (!st.smart) return ordered.slice(0, size);  // sin repaso inteligente, comportamiento normal
+    var dom = [], resto = [];
+    ordered.forEach(function (q) { (estadoDe(q.id) === 'dom' ? dom : resto).push(q); });
+    if (!dom.length) return ordered.slice(0, size);   // aún no hay dominadas que repasar
+    var nDom = Math.min(dom.length, Math.round(size * 0.2));   // ~20% ya contestadas
+    var nResto = size - nDom;
+    if (nResto > resto.length) { nResto = resto.length; nDom = Math.min(size - nResto, dom.length); }
+    var deck = resto.slice(0, nResto);                          // falladas + sin ver (prioridad)
+    shuffle(dom).slice(0, nDom).forEach(function (q) {          // repaso intercalado al azar
+      deck.splice(Math.floor(Math.random() * (deck.length + 1)), 0, q);
+    });
+    return deck;
+  }
   function startSession(pool, keepScore) {
     if (!pool || !pool.length) return;
-    var mazo = ordenarMazo(pool); if (st.size > 0) mazo = mazo.slice(0, st.size);
+    var mazo = buildDeck(pool);
     st.mazo = mazo; st.i = 0; st.respondidas = {}; st.sabidas = {}; st.committed = {}; st.repeatCount = {}; st.repInjected = 0;
     if (!keepScore) { st.score = 0; st.best = 0; st.shieldUsed = 0; }   // el repaso de falladas continúa la puntuación
     st.streak = 0; st.pendingX2 = false; st.shield = false; st.lastMile = 0;
