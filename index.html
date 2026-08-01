@@ -291,6 +291,15 @@
   .buybtn:disabled{background:var(--line);color:var(--muted)}
   .buybtn.use{background:var(--azul);color:#fff}
   .buybtn.own{background:transparent;color:var(--verde);border:1.5px solid var(--verde-d)}
+  .buybtn.play{background:linear-gradient(135deg,var(--morado),#7d4fc0);color:#fff}
+  .gambleres{text-align:center;font-weight:800;font-size:20px;padding:14px;margin:6px 0 12px;border-radius:14px;
+    background:var(--panel2);border:1.5px solid var(--line);color:var(--ink);letter-spacing:2px}
+  .gambleres.show{animation:popup .45s}
+  .gambleres.jackpot{background:color-mix(in srgb,var(--dorado) 24%,var(--panel));border-color:var(--dorado);color:var(--dorado);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--dorado) 30%,transparent)}
+  body.eink .gambleres{background:#fff !important;border:2px solid #000;color:#000 !important;letter-spacing:1px}
+  body.eink .gambleres.jackpot{background:#000 !important;color:#fff !important}
+  body.eink .buybtn.play{background:#fff !important;color:#000 !important;border:2px solid #000 !important}
   .shophead{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);
     margin:14px 2px 4px;padding-top:8px;border-top:1px solid var(--line)}
   .shophead:first-child{border-top:0;padding-top:0;margin-top:4px}
@@ -449,7 +458,7 @@
       </div>
       <div class="toggle-row">
         <div class="lab">🔁 Repaso adaptativo en la partida
-          <small>Repite una vez las que fallas o resuelves con comodín, sin alargar el test</small></div>
+          <small>Añade hasta un 15% extra repitiendo las que fallas, dudas o resuelves con comodín</small></div>
         <label class="switch"><input type="checkbox" id="tgAdapt"><span class="slider"></span></label>
       </div>
       <div class="toggle-row">
@@ -598,7 +607,8 @@
         <button class="iconbtn" id="shopClose" aria-label="Cerrar">✕</button>
       </div>
       <div class="coinsbig">🪙 <b id="coinsShop">0</b> <small>monedas</small></div>
-      <p class="shophint">Ganas monedas acertando (más rápido y con racha = más monedas). Gástalas en comodines, packs, extras divertidos y temas de color para la app.</p>
+      <p class="shophint">Ganas monedas acertando (más rápido y con racha = más monedas). Gástalas en comodines, packs, juegos de azar, efectos y temas de color.</p>
+      <div id="gambleResult" class="gambleres hidden"></div>
       <div id="shopList" class="shoplist"></div>
     </div>
   </div>

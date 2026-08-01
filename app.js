@@ -26,7 +26,7 @@
   var favorites = new Set();      // ids marcados como "buena pregunta"
   var inv = {};                   // inventario de comodines (persistente)
   var coins = 0;                  // monedas (persistente)
-  var cosmet = { temas: ['clasico'], tema: 'clasico', extras: [], confeti: false, finde: false };  // temas estéticos y extras
+  var cosmet = { temas: ['clasico'], tema: 'clasico', extras: [], confeti: false, estrellas: false, monedas: false, finde: false, coinMult: 1 };  // temas estéticos, efectos y mejoras
 
   var LIFEDEF = [
     { key: 'c5050', ic: '50:50', cls: '', label: 'Quita 2' },
@@ -50,13 +50,36 @@
     { key: 'cpub', ic: '📊', name: 'Pack ×5 de Público', desc: 'Cinco comodines del público', qty: 5, price: 4000 },
     { key: 'ctime', ic: '⏱', name: 'Pack ×10 de +15 s', desc: 'Diez ampliaciones de tiempo', qty: 10, price: 1200 }
   ];
-  // Extras y "tonterías"
+  // Extras: regalos, efectos y mejoras
   var EXTRAS = [
-    { key: 'caja', ic: '🎁', name: 'Caja sorpresa', desc: 'Uno de CADA comodín, todos de golpe', price: 2500 },
-    { key: 'confeti', ic: '🎉', name: 'Fiesta de aciertos', desc: 'Lluvia de confeti cada vez que aciertas (se puede quitar)', price: 800, toggle: 'confeti' },
-    { key: 'finde', ic: '🍀', name: 'Amuleto de la suerte', desc: 'El comodín del público acierta bastante más a menudo', price: 3000, toggle: 'finde' }
+    { key: 'caja', ic: '🎁', name: 'Caja sorpresa', desc: 'Uno de CADA comodín, todos de golpe', price: 2500, kind: 'box', qty: 1 },
+    { key: 'caja3', ic: '🎁', name: 'Caja grande', desc: 'TRES de cada comodín de una tacada', price: 6000, kind: 'box', qty: 3 },
+    { key: 'confeti', ic: '🎉', name: 'Fiesta de aciertos', desc: 'Lluvia de confeti al acertar (se puede quitar)', price: 800, kind: 'toggle', flag: 'confeti' },
+    { key: 'estrellas', ic: '🌟', name: 'Lluvia de estrellas', desc: 'Estrellas cayendo al acertar', price: 800, kind: 'toggle', flag: 'estrellas' },
+    { key: 'monedas', ic: '💰', name: 'Lluvia de monedas', desc: 'Monedas volando al acertar', price: 800, kind: 'toggle', flag: 'monedas' },
+    { key: 'finde', ic: '🍀', name: 'Amuleto de la suerte', desc: 'El comodín del público acierta mucho más', price: 3000, kind: 'toggle', flag: 'finde' },
+    { key: 'coinmult', ic: '💎', name: 'Multiplicador de monedas', desc: 'Ganas un 50% MÁS de monedas para siempre', price: 5000, kind: 'upgrade', flag: 'coinMult', val: 1.5 }
   ];
-  // Temas estéticos (paletas de color). "clasico" es el de siempre (gratis).
+  // Juegos de azar: funde puntos con posibilidad de premios gordos
+  var GAMES = [
+    { key: 'ruleta', ic: '🎰', name: 'Ruleta de la suerte', desc: 'Gira: comodines, monedas… o el bote', price: 400, prizes: [
+      { w: 28, txt: '😅 ¡Casi! Te llevas +50 🪙', apply: function () { giveCoins(50); } },
+      { w: 30, txt: '🎉 ¡1 comodín al azar!', apply: function () { giveComodines(1); } },
+      { w: 22, txt: '🎉 ¡2 comodines al azar!', apply: function () { giveComodines(2); } },
+      { w: 12, txt: '💰 ¡+800 monedas!', apply: function () { giveCoins(800); } },
+      { w: 6, txt: '🔥 ¡4 comodines de golpe!', apply: function () { giveComodines(4); } },
+      { w: 2, jackpot: true, txt: '💎 ¡¡BOTE!! +2000 🪙 y caja sorpresa', apply: function () { giveCoins(2000); giveBox(1); } }
+    ] },
+    { key: 'cofre', ic: '🧰', name: 'Cofre legendario', desc: 'Más caro, premios mucho mayores (¡y temas!)', price: 2000, prizes: [
+      { w: 20, txt: '😬 Cofre casi vacío… +300 🪙', apply: function () { giveCoins(300); } },
+      { w: 25, txt: '🎁 ¡3 comodines al azar!', apply: function () { giveComodines(3); } },
+      { w: 25, txt: '💰 ¡+3000 monedas!', apply: function () { giveCoins(3000); } },
+      { w: 15, txt: '🎁 ¡Caja grande! 3 de cada', apply: function () { giveBox(3); } },
+      { w: 10, txt: '🔥 ¡8 comodines de golpe!', apply: function () { giveComodines(8); } },
+      { w: 5, jackpot: true, txt: '💎 ¡¡BOTE LEGENDARIO!! +8000 🪙 + un tema nuevo', apply: function () { giveCoins(8000); grantRandomTheme(); } }
+    ] }
+  ];
+  // Temas estéticos. "clasico" es el de siempre (gratis). Los de degradado llevan "bgimg".
   var THEMES = [
     { key: 'clasico', ic: '🎨', name: 'Clásico', price: 0, vars: null },
     { key: 'noche', ic: '🌙', name: 'Noche neón', price: 600, vars: { bg:'#0a0a12', bg2:'#05050a', panel:'#14141f', panel2:'#1c1c2b', line:'#2b2b3d', ink:'#eafff9', soft:'#9fb6cf', muted:'#7382a0', azul:'#3df0ff', 'azul-d':'#1fbfd6', verde:'#39ff9e', 'verde-d':'#1fd67f', rojo:'#ff4d6d', naranja:'#ffb03a', morado:'#c77dff', dorado:'#ffe14d' } },
@@ -65,7 +88,14 @@
     { key: 'bosque', ic: '🌲', name: 'Bosque', price: 700, vars: { bg:'#eef4ec', bg2:'#e0ebdb', panel:'#ffffff', panel2:'#f1f7ef', line:'#d0e0c8', ink:'#1e2c1c', soft:'#4f6b48', muted:'#7a9170', azul:'#3d7a5a', 'azul-d':'#2c5e44', verde:'#3f9d4e', 'verde-d':'#2f7a3b', rojo:'#d05a4a', naranja:'#d0913c', morado:'#7d6bc8', dorado:'#b8922f' } },
     { key: 'lava', ic: '🔥', name: 'Lava', price: 900, vars: { bg:'#160c0a', bg2:'#0d0605', panel:'#241412', panel2:'#301a17', line:'#43221d', ink:'#ffece4', soft:'#d0a08f', muted:'#9a6f60', azul:'#ff8a3d', 'azul-d':'#e06a1f', verde:'#ffb03a', 'verde-d':'#e0902a', rojo:'#ff4d3d', naranja:'#ff7a3d', morado:'#e0673d', dorado:'#ffc23d' } },
     { key: 'pergamino', ic: '📜', name: 'Pergamino', price: 700, vars: { bg:'#f2e9d8', bg2:'#e8dcc4', panel:'#fbf5e8', panel2:'#f3ead6', line:'#dccba8', ink:'#3a2e1c', soft:'#6b5a3d', muted:'#94815e', azul:'#8a6d3b', 'azul-d':'#6f5629', verde:'#6b7d3a', 'verde-d':'#54632c', rojo:'#a8503a', naranja:'#b07a2e', morado:'#7d5b3a', dorado:'#b8922f' } },
-    { key: 'galaxia', ic: '🌌', name: 'Galaxia', price: 1200, vars: { bg:'#0f0a1f', bg2:'#080512', panel:'#191233', panel2:'#221847', line:'#332963', ink:'#ece6ff', soft:'#b0a0d8', muted:'#7d6fa8', azul:'#7d6bff', 'azul-d':'#5a49d6', verde:'#3fd6a0', 'verde-d':'#2fa87d', rojo:'#ff5d8f', naranja:'#ffab5d', morado:'#c77dff', dorado:'#ffd24d' } }
+    { key: 'galaxia', ic: '🌌', name: 'Galaxia', price: 1200, vars: { bg:'#0f0a1f', bg2:'#080512', panel:'#191233', panel2:'#221847', line:'#332963', ink:'#ece6ff', soft:'#b0a0d8', muted:'#7d6fa8', azul:'#7d6bff', 'azul-d':'#5a49d6', verde:'#3fd6a0', 'verde-d':'#2fa87d', rojo:'#ff5d8f', naranja:'#ffab5d', morado:'#c77dff', dorado:'#ffd24d' } },
+    { key: 'atardecer', ic: '🌅', name: 'Atardecer (degradado)', price: 1000, bgimg: 'linear-gradient(160deg, #ffd194 0%, #ff9a8b 45%, #d76d77 100%)', vars: { panel:'#fff6f0', panel2:'#ffece1', line:'#f2cdbb', ink:'#3d2320', soft:'#7a5548', muted:'#a07d6e', azul:'#c25e3a', 'azul-d':'#a2482a', verde:'#4f9d6b', 'verde-d':'#3c7c53', rojo:'#d84b4b', naranja:'#e07a2e', morado:'#a05a8a', dorado:'#c8912f' } },
+    { key: 'aurora', ic: '🌠', name: 'Aurora (degradado)', price: 1100, bgimg: 'linear-gradient(160deg, #0f2027 0%, #203a43 50%, #2c5364 100%)', vars: { panel:'#12222a', panel2:'#183038', line:'#2b4650', ink:'#eafbff', soft:'#a9c6cf', muted:'#7a9aa3', azul:'#38e0c8', 'azul-d':'#20b8a2', verde:'#57e08a', 'verde-d':'#38b86a', rojo:'#ff6b7a', naranja:'#ffb15c', morado:'#9d8bff', dorado:'#ffd85c' } },
+    { key: 'chicle', ic: '🍬', name: 'Chicle (degradado)', price: 1000, bgimg: 'linear-gradient(160deg, #f9d423 0%, #ff6fb5 55%, #a06bff 100%)', vars: { panel:'#fff5fb', panel2:'#ffe9f5', line:'#f3cbe2', ink:'#3a2036', soft:'#7d5570', muted:'#a37f97', azul:'#c65baa', 'azul-d':'#a3428a', verde:'#57a06f', 'verde-d':'#417c54', rojo:'#e0587a', naranja:'#e08a3c', morado:'#9a5fd0', dorado:'#c8912f' } },
+    { key: 'amatista', ic: '🔮', name: 'Amatista (degradado)', price: 1300, bgimg: 'linear-gradient(160deg, #2b0f3a 0%, #4a1a6a 50%, #7b2ff7 100%)', vars: { panel:'#241033', panel2:'#301545', line:'#452a5e', ink:'#f2e9ff', soft:'#c3a9e0', muted:'#9077b0', azul:'#b18bff', 'azul-d':'#8b5fe0', verde:'#4fd6a0', 'verde-d':'#38a87d', rojo:'#ff6b9a', naranja:'#ffab5d', morado:'#d29bff', dorado:'#ffd24d' } },
+    { key: 'marea', ic: '💧', name: 'Marea (degradado)', price: 1000, bgimg: 'linear-gradient(160deg, #43cea2 0%, #2b78c4 100%)', vars: { panel:'#f0fbf8', panel2:'#e0f4ee', line:'#c2e2d8', ink:'#0d2a2a', soft:'#3d6b66', muted:'#6f9a94', azul:'#0e8a9b', 'azul-d':'#0a6777', verde:'#12a578', 'verde-d':'#0d805c', rojo:'#e2585b', naranja:'#e08a3c', morado:'#5b7ac9', dorado:'#c8912f' } },
+    { key: 'arcoiris', ic: '🌈', name: 'Arcoíris (degradado)', price: 1500, bgimg: 'linear-gradient(120deg, #f6d365 0%, #fda085 25%, #f78ca0 50%, #a18cd1 75%, #84fab0 100%)', vars: { panel:'#fffaf3', panel2:'#fff0e6', line:'#efd9c6', ink:'#33262e', soft:'#6f5a63', muted:'#9a8590', azul:'#c25ea0', 'azul-d':'#a04680', verde:'#48a06a', 'verde-d':'#367c50', rojo:'#e0596a', naranja:'#e08a3c', morado:'#8a6bd0', dorado:'#c8912f' } },
+    { key: 'cosmos', ic: '🪐', name: 'Cosmos (degradado)', price: 1400, bgimg: 'linear-gradient(160deg, #0b0f2a 0%, #1a1a4a 45%, #3a1c6a 100%)', vars: { panel:'#12163a', panel2:'#1a1f4d', line:'#2c2f66', ink:'#e9ecff', soft:'#aab0e0', muted:'#7d84b8', azul:'#6b8bff', 'azul-d':'#4960d6', verde:'#3fd6b0', 'verde-d':'#2fa88a', rojo:'#ff6b8f', naranja:'#ffb15c', morado:'#b78bff', dorado:'#ffd24d' } }
   ];
 
   function $(id) { return document.getElementById(id); }
@@ -142,7 +172,7 @@
   }
   function saveInv() { try { localStorage.setItem(LS_INV, JSON.stringify(inv)); } catch (e) {} }
   function loadCoins() { try { coins = parseInt(localStorage.getItem(LS_COINS) || '0', 10) || 0; } catch (e) { coins = 0; } }
-  function loadCosmet() { try { var o = JSON.parse(localStorage.getItem(LS_COSMET) || '{}') || {}; cosmet.temas = (o.temas && o.temas.length) ? o.temas : ['clasico']; cosmet.tema = o.tema || 'clasico'; cosmet.extras = o.extras || []; cosmet.confeti = !!o.confeti; cosmet.finde = !!o.finde; } catch (e) {} }
+  function loadCosmet() { try { var o = JSON.parse(localStorage.getItem(LS_COSMET) || '{}') || {}; cosmet.temas = (o.temas && o.temas.length) ? o.temas : ['clasico']; cosmet.tema = o.tema || 'clasico'; cosmet.extras = o.extras || []; cosmet.confeti = !!o.confeti; cosmet.estrellas = !!o.estrellas; cosmet.monedas = !!o.monedas; cosmet.finde = !!o.finde; cosmet.coinMult = o.coinMult || 1; } catch (e) {} }
   function saveCosmet() { try { localStorage.setItem(LS_COSMET, JSON.stringify(cosmet)); } catch (e) {} }
   function saveCoins() { try { localStorage.setItem(LS_COINS, String(coins)); } catch (e) {} }
   function getStat(id) { return stats[id] || { ok: 0, fail: 0, seen: 0, t: 0, lo: undefined }; }
@@ -257,6 +287,8 @@
     var keys = ['bg', 'bg2', 'panel', 'panel2', 'line', 'ink', 'soft', 'muted', 'azul', 'azul-d', 'verde', 'verde-d', 'rojo', 'naranja', 'morado', 'dorado'];
     keys.forEach(function (k) { root.style.removeProperty('--' + k); });
     if (t && t.vars) keys.forEach(function (k) { if (t.vars[k]) root.style.setProperty('--' + k, t.vars[k]); });
+    if (t && t.bgimg) document.body.style.background = t.bgimg + ' fixed';   // temas de degradado
+    else document.body.style.removeProperty('background');
   }
   function shopHead(wrap, txt) { var h = document.createElement('div'); h.className = 'shophead'; h.textContent = txt; wrap.appendChild(h); }
   function shopRow(wrap, ic, name, desc, sub, label, disabled, cls, onClick) {
@@ -271,12 +303,17 @@
     SHOP.forEach(function (it) { shopRow(wrap, it.ic, it.name, it.desc, 'Tienes: ' + (inv[it.key] || 0), '🪙 ' + it.price, coins < it.price, '', function () { buyItem(it); }); });
     shopHead(wrap, '📦 Packs (más baratos por unidad)');
     PACKS.forEach(function (it) { shopRow(wrap, it.ic, it.name, it.desc, 'Tienes: ' + (inv[it.key] || 0), '🪙 ' + it.price, coins < it.price, '', function () { buyPack(it); }); });
-    shopHead(wrap, '✨ Extras y tonterías');
+    shopHead(wrap, '🎰 Juegos de azar (funde puntos, gana premios)');
+    GAMES.forEach(function (g) { shopRow(wrap, g.ic, g.name, g.desc, '', '🪙 ' + g.price + ' · ¡Jugar!', st.spinning || coins < g.price, 'play', function () { gamble(g); }); });
+    shopHead(wrap, '✨ Regalos, efectos y mejoras');
     EXTRAS.forEach(function (it) {
-      if (it.toggle) {
-        var owned = cosmet.extras.indexOf(it.key) >= 0, on = !!cosmet[it.toggle];
+      if (it.kind === 'toggle') {
+        var owned = cosmet.extras.indexOf(it.key) >= 0, on = !!cosmet[it.flag];
         var label = owned ? (on ? '✓ Activado' : 'Activar') : '🪙 ' + it.price;
         shopRow(wrap, it.ic, it.name, it.desc, owned ? 'Comprado · toca para activar/desactivar' : '', label, owned ? false : coins < it.price, on ? 'own' : (owned ? 'use' : ''), function () { buyExtra(it); });
+      } else if (it.kind === 'upgrade') {
+        var got = cosmet[it.flag] >= it.val;
+        shopRow(wrap, it.ic, it.name, it.desc, got ? '✓ Comprado (permanente)' : '', got ? '✓' : '🪙 ' + it.price, got ? true : coins < it.price, got ? 'own' : '', function () { buyExtra(it); });
       } else {
         shopRow(wrap, it.ic, it.name, it.desc, '', '🪙 ' + it.price, coins < it.price, '', function () { buyExtra(it); });
       }
@@ -292,14 +329,40 @@
   function buyItem(it) { if (coins < it.price) return; coins -= it.price; inv[it.key] = (inv[it.key] || 0) + 1; saveCoins(); saveInv(); afterBuy(); }
   function buyPack(it) { if (coins < it.price) return; coins -= it.price; inv[it.key] = (inv[it.key] || 0) + it.qty; saveCoins(); saveInv(); afterBuy(); }
   function buyExtra(it) {
-    if (it.toggle && cosmet.extras.indexOf(it.key) >= 0) { cosmet[it.toggle] = !cosmet[it.toggle]; saveCosmet(); buildShop(); return; }
+    if (it.kind === 'toggle' && cosmet.extras.indexOf(it.key) >= 0) { cosmet[it.flag] = !cosmet[it.flag]; saveCosmet(); buildShop(); return; }
+    if (it.kind === 'upgrade' && cosmet[it.flag] >= it.val) return;
     if (coins < it.price) return; coins -= it.price; saveCoins();
-    if (it.key === 'caja') { LIFEDEF.forEach(function (l) { inv[l.key] = (inv[l.key] || 0) + 1; }); saveInv(); }
-    if (it.toggle) { cosmet.extras.push(it.key); cosmet[it.toggle] = true; saveCosmet(); }
+    if (it.kind === 'box') { for (var r = 0; r < (it.qty || 1); r++) LIFEDEF.forEach(function (l) { inv[l.key] = (inv[l.key] || 0) + 1; }); saveInv(); }
+    else if (it.kind === 'toggle') { if (cosmet.extras.indexOf(it.key) < 0) cosmet.extras.push(it.key); cosmet[it.flag] = true; saveCosmet(); }
+    else if (it.kind === 'upgrade') { cosmet[it.flag] = it.val; if (cosmet.extras.indexOf(it.key) < 0) cosmet.extras.push(it.key); saveCosmet(); }
     afterBuy();
   }
   function buyTheme(t) { if (coins < t.price) return; coins -= t.price; cosmet.temas.push(t.key); cosmet.tema = t.key; saveCoins(); saveCosmet(); applyTheme(); afterBuy(); }
   function useTheme(t) { cosmet.tema = t.key; saveCosmet(); applyTheme(); buildShop(); }
+  /* ---- juegos de azar ---- */
+  function giveCoins(n) { coins += n; saveCoins(); }
+  function giveComodines(n) { for (var i = 0; i < n; i++) { var k = LIFEDEF[Math.floor(Math.random() * LIFEDEF.length)].key; inv[k] = (inv[k] || 0) + 1; } saveInv(); }
+  function giveBox(q) { for (var r = 0; r < q; r++) LIFEDEF.forEach(function (l) { inv[l.key] = (inv[l.key] || 0) + 1; }); saveInv(); }
+  function grantRandomTheme() { var no = THEMES.filter(function (t) { return t.price > 0 && cosmet.temas.indexOf(t.key) < 0; }); if (no.length) { cosmet.temas.push(no[Math.floor(Math.random() * no.length)].key); saveCosmet(); } else giveCoins(3000); }
+  function weightedPick(list) { var tot = 0, i; for (i = 0; i < list.length; i++) tot += list[i].w; var r = Math.random() * tot, acc = 0; for (i = 0; i < list.length; i++) { acc += list[i].w; if (r < acc) return list[i]; } return list[list.length - 1]; }
+  function gamble(g) {
+    if (st.spinning || coins < g.price) return;
+    st.spinning = true; coins -= g.price; saveCoins(); updateCoinsUI();
+    var prize = weightedPick(g.prizes);
+    var el = $('gambleResult'); el.classList.remove('hidden'); el.className = 'gambleres show';
+    var frames = ['🎰', '🍒', '💎', '🔔', '⭐', '🍀', '🪙', '7️⃣', '🎁'];
+    function rnd3() { return frames[Math.floor(Math.random() * frames.length)] + ' ' + frames[Math.floor(Math.random() * frames.length)] + ' ' + frames[Math.floor(Math.random() * frames.length)]; }
+    var t = 0, iv = setInterval(function () {
+      el.textContent = rnd3(); t++;
+      if (t > 8) {
+        clearInterval(iv); prize.apply(); st.spinning = false;
+        el.className = 'gambleres show' + (prize.jackpot ? ' jackpot' : ''); el.textContent = prize.txt;
+        sfx(prize.jackpot ? 'bonus' : 'life'); if (prize.jackpot) confettiBurst(['🎉', '💎', '🪙', '🎊', '⭐', '🏆']);
+        saveInv(); buildShop(); updateCoinsUI();
+        if (!$('study').classList.contains('hidden') && st.juegoEf) renderLifes();
+      }
+    }, 85);
+  }
 
   /* ---------------- SESIÓN ---------------- */
   function ordenarMazo(pool) {
@@ -426,21 +489,22 @@
   function scheduleRepeat(q) {
     if (!st.adapt || !st.juegoEf) return;
     var id = q.id;
-    if ((st.repeatCount[id] || 0) >= 1) return;              // como máximo 1 repaso por pregunta
-    if (st.mazo.length - st.i < 4) return;                   // muy cerca del final: no hay hueco
-    var maxOff = st.mazo.length - 1 - st.i;                  // insertar antes de la última carta
+    if ((st.repeatCount[id] || 0) >= 1) return;                        // como máximo 1 repaso por pregunta
+    var budget = Math.max(1, Math.ceil((st.deckSize || st.mazo.length) * 0.15));  // hasta un 15% extra
+    if ((st.repInjected || 0) >= budget) return;                      // presupuesto de repasos agotado
+    if (st.mazo.length - st.i < 3) return;                            // sin hueco por delante
+    var maxOff = st.mazo.length - st.i;                               // puede añadirse al final (crece el total)
     var off = Math.min(3 + Math.floor(Math.random() * 4), maxOff);   // 3-6 cartas más adelante
     st.mazo.splice(st.i + off, 0, q);
-    // el total NO crece: quitamos una carta futura para que el test mantenga su tamaño
-    if (st.deckSize && st.mazo.length > st.deckSize) st.mazo.pop();
     st.repeatCount[id] = (st.repeatCount[id] || 0) + 1;
     st.repInjected = (st.repInjected || 0) + 1;
-    $('pgTot').textContent = st.mazo.length;
+    $('pgTot').textContent = st.mazo.length;                          // suma como extra, con tope del 15%
   }
   function esDura(q, idx, timeout) {
     var fallo = timeout || idx !== q.correcta;
     var comodin = Object.keys(st.cardUsed || {}).length > 0;
-    return fallo || comodin;   // solo si fallas o usas comodín (ya no por tardar)
+    var lenta = (Date.now() - (st.cardStart || Date.now())) > 25000;   // dudó más de la cuenta (>25 s)
+    return fallo || comodin || lenta;
   }
   function onAnswer(q, idx, btn) {
     if (st.juegoEf && st.answered) return;
@@ -488,9 +552,11 @@
   }
   function updateScoreUI() { $('hScore').textContent = st.score; $('hStreak').textContent = '🔥 ' + st.streak; }
   function pop(txt, cls) { var p = $('pointsPop'); p.textContent = txt; p.className = 'pointspop show' + (cls ? ' ' + cls : ''); }
-  function confettiBurst() {
+  function confettiBurst(customEmo) {
     if (st.eink) return;
-    var emo = ['🎉', '🎊', '⭐', '✨', '🥳', '💥', '🌟'];
+    var emo = customEmo;
+    if (!emo) { emo = []; if (cosmet.confeti) emo = emo.concat(['🎉', '🎊', '🥳']); if (cosmet.estrellas) emo = emo.concat(['🌟', '⭐', '✨', '💫']); if (cosmet.monedas) emo = emo.concat(['🪙', '💰', '🤑']); }
+    if (!emo.length) return;
     for (var i = 0; i < 16; i++) {
       var s = document.createElement('span'); s.className = 'confetti'; s.textContent = emo[Math.floor(Math.random() * emo.length)];
       s.style.left = (Math.random() * 100) + 'vw';
@@ -508,11 +574,11 @@
     // sin racha, pocos puntos; con cada acierto seguido, sustancialmente más
     var pts = 10 * st.streak + Math.round(st.timeLeft / 10), doubled = st.pendingX2;
     if (doubled) { pts *= 2; st.pendingX2 = false; sfx('bonus'); }
-    st.score += pts; coins += pts; saveCoins();
+    st.score += pts; coins += Math.round(pts * (cosmet.coinMult || 1)); saveCoins();
     pop('+' + pts + (st.streak >= 2 ? ' 🔥×' + st.streak : ''), doubled ? 'bonus' : '');
     updateScoreUI(); updateCoinsUI(); renderLifes();
     if (st.streak % 5 === 0 && st.streak !== st.lastMile) { st.lastMile = st.streak; grantBonus(); }
-    if (cosmet.confeti) confettiBurst();
+    confettiBurst();
     if (!st.eink) show('knewWrap');
     show('postActions'); updatePostActions(q);
   }
