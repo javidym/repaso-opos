@@ -17,7 +17,7 @@
     size: 30, modoTest: true, barajar: true, smart: true, juego: true, sonido: true, tiempo: true, eink: false, adapt: false, juegoEf: true,
     mazo: [], i: 0, volteada: false, cardStart: 0, repeatCount: {}, repInjected: 0,
     respondidas: {}, sabidas: {}, committed: {}, cardUsed: {},
-    score: 0, streak: 0, best: 0, shieldUsed: 0,
+    score: 0, streak: 0, best: 0, shieldUsed: 0, autoX2: false,
     pendingX2: false, shield: false, answered: false, timer: null, timeLeft: QTIME, lastMile: 0
   };
 
@@ -26,7 +26,7 @@
   var favorites = new Set();      // ids marcados como "buena pregunta"
   var inv = {};                   // inventario de comodines (persistente)
   var coins = 0;                  // monedas (persistente)
-  var cosmet = { temas: ['clasico'], tema: 'clasico', extras: [], confeti: false, estrellas: false, monedas: false, finde: false, coinMult: 1 };  // temas estéticos, efectos y mejoras
+  var cosmet = { temas: ['clasico'], tema: 'clasico', extras: [], confeti: false, estrellas: false, monedas: false, finde: false, coinMult: 1, trofeos: [] };  // temas, efectos, mejoras y colección
 
   var LIFEDEF = [
     { key: 'c5050', ic: '50:50', cls: '', label: 'Quita 2' },
@@ -64,20 +64,33 @@
   var GAMES = [
     { key: 'ruleta', ic: '🎰', name: 'Ruleta de la suerte', desc: 'Gira: comodines, monedas… o el bote', price: 400, prizes: [
       { w: 28, txt: '😅 ¡Casi! Te llevas +50 🪙', apply: function () { giveCoins(50); } },
-      { w: 30, txt: '🎉 ¡1 comodín al azar!', apply: function () { giveComodines(1); } },
-      { w: 22, txt: '🎉 ¡2 comodines al azar!', apply: function () { giveComodines(2); } },
+      { w: 30, txt: '🎉 ¡1 comodín!', apply: function () { return giveComodines(1); } },
+      { w: 22, txt: '🎉 ¡2 comodines!', apply: function () { return giveComodines(2); } },
       { w: 12, txt: '💰 ¡+800 monedas!', apply: function () { giveCoins(800); } },
-      { w: 6, txt: '🔥 ¡4 comodines de golpe!', apply: function () { giveComodines(4); } },
-      { w: 2, jackpot: true, txt: '💎 ¡¡BOTE!! +2000 🪙 y caja sorpresa', apply: function () { giveCoins(2000); giveBox(1); } }
+      { w: 6, txt: '🔥 ¡4 comodines!', apply: function () { return giveComodines(4); } },
+      { w: 2, jackpot: true, txt: '💎 ¡¡BOTE!! +2000 🪙 y caja sorpresa', apply: function () { giveCoins(2000); return giveBox(1); } }
     ] },
     { key: 'cofre', ic: '🧰', name: 'Cofre legendario', desc: 'Más caro, premios mucho mayores (¡y temas!)', price: 2000, prizes: [
       { w: 20, txt: '😬 Cofre casi vacío… +300 🪙', apply: function () { giveCoins(300); } },
-      { w: 25, txt: '🎁 ¡3 comodines al azar!', apply: function () { giveComodines(3); } },
+      { w: 25, txt: '🎁 ¡3 comodines!', apply: function () { return giveComodines(3); } },
       { w: 25, txt: '💰 ¡+3000 monedas!', apply: function () { giveCoins(3000); } },
-      { w: 15, txt: '🎁 ¡Caja grande! 3 de cada', apply: function () { giveBox(3); } },
-      { w: 10, txt: '🔥 ¡8 comodines de golpe!', apply: function () { giveComodines(8); } },
-      { w: 5, jackpot: true, txt: '💎 ¡¡BOTE LEGENDARIO!! +8000 🪙 + un tema nuevo', apply: function () { giveCoins(8000); grantRandomTheme(); } }
+      { w: 15, txt: '🎁 ¡Caja grande!', apply: function () { return giveBox(3); } },
+      { w: 10, txt: '🔥 ¡8 comodines!', apply: function () { return giveComodines(8); } },
+      { w: 5, jackpot: true, txt: '💎 ¡¡BOTE LEGENDARIO!! +8000 🪙', apply: function () { giveCoins(8000); return '+ ' + grantRandomTheme(); } }
     ] }
+  ];
+  // Coleccionables: puro lujo para fundir puntos, NO dan ninguna ventaja de juego.
+  var TROPHIES = [
+    { key: 'tr_bronce', ic: '🥉', name: 'Copa de bronce', price: 5000 },
+    { key: 'tr_plata', ic: '🥈', name: 'Copa de plata', price: 12000 },
+    { key: 'tr_oro', ic: '🥇', name: 'Copa de oro', price: 25000 },
+    { key: 'tr_medalla', ic: '🎖️', name: 'Medalla de honor', price: 40000 },
+    { key: 'tr_corona', ic: '👑', name: 'Corona real', price: 60000 },
+    { key: 'tr_diamante', ic: '💎', name: 'Diamante', price: 90000 },
+    { key: 'tr_unicornio', ic: '🦄', name: 'Unicornio', price: 150000 },
+    { key: 'tr_dragon', ic: '🐉', name: 'Dragón legendario', price: 300000 },
+    { key: 'tr_ovni', ic: '🛸', name: 'Platillo cósmico', price: 500000 },
+    { key: 'tr_gato', ic: '🐈', name: 'Gato de la suerte', price: 800000 }
   ];
   // Temas estéticos. "clasico" es el de siempre (gratis). Los de degradado llevan "bgimg".
   var THEMES = [
@@ -151,13 +164,13 @@
 
   /* ---------------- PERSISTENCIA ---------------- */
   var LS = 'repasoOpos.cfg', LS_STATS = 'repasoOpos.stats', LS_DISC = 'repasoOpos.discarded', LS_INV = 'repasoOpos.inv', LS_COINS = 'repasoOpos.coins', LS_FAV = 'repasoOpos.fav', LS_COSMET = 'repasoOpos.cosmet';
-  function saveCfg() { try { localStorage.setItem(LS, JSON.stringify({ sel: Array.from(st.seleccion), size: st.size, test: st.modoTest, shuffle: st.barajar, smart: st.smart, juego: st.juego, sonido: st.sonido, tiempo: st.tiempo, eink: st.eink, adapt: st.adapt })); } catch (e) {} }
+  function saveCfg() { try { localStorage.setItem(LS, JSON.stringify({ sel: Array.from(st.seleccion), size: st.size, test: st.modoTest, shuffle: st.barajar, smart: st.smart, juego: st.juego, sonido: st.sonido, tiempo: st.tiempo, eink: st.eink, adapt: st.adapt, autoX2: st.autoX2 })); } catch (e) {} }
   function loadCfg() {
     try {
       var c = JSON.parse(localStorage.getItem(LS) || '{}');
       if (c.sel) c.sel.forEach(function (n) { if (countTema(n)) st.seleccion.add(n); });
       if (typeof c.size === 'number') st.size = c.size;
-      ['test:modoTest', 'shuffle:barajar', 'smart:smart', 'juego:juego', 'sonido:sonido', 'tiempo:tiempo', 'eink:eink', 'adapt:adapt'].forEach(function (p) { var k = p.split(':'); if (typeof c[k[0]] === 'boolean') st[k[1]] = c[k[0]]; });
+      ['test:modoTest', 'shuffle:barajar', 'smart:smart', 'juego:juego', 'sonido:sonido', 'tiempo:tiempo', 'eink:eink', 'adapt:adapt', 'autoX2:autoX2'].forEach(function (p) { var k = p.split(':'); if (typeof c[k[0]] === 'boolean') st[k[1]] = c[k[0]]; });
     } catch (e) {}
   }
   function loadStats() { try { stats = JSON.parse(localStorage.getItem(LS_STATS) || '{}') || {}; } catch (e) { stats = {}; } }
@@ -172,7 +185,7 @@
   }
   function saveInv() { try { localStorage.setItem(LS_INV, JSON.stringify(inv)); } catch (e) {} }
   function loadCoins() { try { coins = parseInt(localStorage.getItem(LS_COINS) || '0', 10) || 0; } catch (e) { coins = 0; } }
-  function loadCosmet() { try { var o = JSON.parse(localStorage.getItem(LS_COSMET) || '{}') || {}; cosmet.temas = (o.temas && o.temas.length) ? o.temas : ['clasico']; cosmet.tema = o.tema || 'clasico'; cosmet.extras = o.extras || []; cosmet.confeti = !!o.confeti; cosmet.estrellas = !!o.estrellas; cosmet.monedas = !!o.monedas; cosmet.finde = !!o.finde; cosmet.coinMult = o.coinMult || 1; } catch (e) {} }
+  function loadCosmet() { try { var o = JSON.parse(localStorage.getItem(LS_COSMET) || '{}') || {}; cosmet.temas = (o.temas && o.temas.length) ? o.temas : ['clasico']; cosmet.tema = o.tema || 'clasico'; cosmet.extras = o.extras || []; cosmet.confeti = !!o.confeti; cosmet.estrellas = !!o.estrellas; cosmet.monedas = !!o.monedas; cosmet.finde = !!o.finde; cosmet.coinMult = o.coinMult || 1; cosmet.trofeos = o.trofeos || []; } catch (e) {} }
   function saveCosmet() { try { localStorage.setItem(LS_COSMET, JSON.stringify(cosmet)); } catch (e) {} }
   function saveCoins() { try { localStorage.setItem(LS_COINS, String(coins)); } catch (e) {} }
   function getStat(id) { return stats[id] || { ok: 0, fail: 0, seen: 0, t: 0, lo: undefined }; }
@@ -318,6 +331,15 @@
         shopRow(wrap, it.ic, it.name, it.desc, '', '🪙 ' + it.price, coins < it.price, '', function () { buyExtra(it); });
       }
     });
+    shopHead(wrap, '🏆 Colección (solo por presumir, sin ventajas)');
+    var got = TROPHIES.filter(function (t) { return cosmet.trofeos.indexOf(t.key) >= 0; });
+    var vit = document.createElement('div'); vit.className = 'trophycase';
+    vit.innerHTML = got.length ? got.map(function (t) { return '<span title="' + t.name + '">' + t.ic + '</span>'; }).join('') : '<span class="empty">Tu vitrina está vacía… ¡funde puntos aquí!</span>';
+    wrap.appendChild(vit);
+    TROPHIES.forEach(function (t) {
+      var owned = cosmet.trofeos.indexOf(t.key) >= 0;
+      shopRow(wrap, t.ic, t.name, owned ? '¡En tu vitrina!' : 'Objeto de lujo, puro capricho', '', owned ? '✓ Tuyo' : '🪙 ' + t.price, owned ? true : coins < t.price, owned ? 'own' : '', function () { buyTrophy(t); });
+    });
     shopHead(wrap, '🎨 Temas estéticos');
     THEMES.forEach(function (t) {
       var owned = cosmet.temas.indexOf(t.key) >= 0, active = cosmet.tema === t.key;
@@ -337,13 +359,15 @@
     else if (it.kind === 'upgrade') { cosmet[it.flag] = it.val; if (cosmet.extras.indexOf(it.key) < 0) cosmet.extras.push(it.key); saveCosmet(); }
     afterBuy();
   }
+  function buyTrophy(t) { if (coins < t.price || cosmet.trofeos.indexOf(t.key) >= 0) return; coins -= t.price; cosmet.trofeos.push(t.key); saveCoins(); saveCosmet(); afterBuy(); }
   function buyTheme(t) { if (coins < t.price) return; coins -= t.price; cosmet.temas.push(t.key); cosmet.tema = t.key; saveCoins(); saveCosmet(); applyTheme(); afterBuy(); }
   function useTheme(t) { cosmet.tema = t.key; saveCosmet(); applyTheme(); buildShop(); }
   /* ---- juegos de azar ---- */
   function giveCoins(n) { coins += n; saveCoins(); }
-  function giveComodines(n) { for (var i = 0; i < n; i++) { var k = LIFEDEF[Math.floor(Math.random() * LIFEDEF.length)].key; inv[k] = (inv[k] || 0) + 1; } saveInv(); }
-  function giveBox(q) { for (var r = 0; r < q; r++) LIFEDEF.forEach(function (l) { inv[l.key] = (inv[l.key] || 0) + 1; }); saveInv(); }
-  function grantRandomTheme() { var no = THEMES.filter(function (t) { return t.price > 0 && cosmet.temas.indexOf(t.key) < 0; }); if (no.length) { cosmet.temas.push(no[Math.floor(Math.random() * no.length)].key); saveCosmet(); } else giveCoins(3000); }
+  function comLabel(keys) { var c = {}, ic = {}; LIFEDEF.forEach(function (l) { ic[l.key] = l.ic; }); keys.forEach(function (k) { c[k] = (c[k] || 0) + 1; }); return Object.keys(c).map(function (k) { return c[k] + '× ' + ic[k]; }).join(', '); }
+  function giveComodines(n) { var got = []; for (var i = 0; i < n; i++) { var k = LIFEDEF[Math.floor(Math.random() * LIFEDEF.length)].key; inv[k] = (inv[k] || 0) + 1; got.push(k); } saveInv(); return comLabel(got); }
+  function giveBox(q) { for (var r = 0; r < q; r++) LIFEDEF.forEach(function (l) { inv[l.key] = (inv[l.key] || 0) + 1; }); saveInv(); return q + ' de cada comodín'; }
+  function grantRandomTheme() { var no = THEMES.filter(function (t) { return t.price > 0 && cosmet.temas.indexOf(t.key) < 0; }); if (no.length) { var t = no[Math.floor(Math.random() * no.length)]; cosmet.temas.push(t.key); saveCosmet(); return 'tema ' + t.ic + ' ' + t.name; } giveCoins(3000); return '+3000 🪙 (ya tienes todos los temas)'; }
   function weightedPick(list) { var tot = 0, i; for (i = 0; i < list.length; i++) tot += list[i].w; var r = Math.random() * tot, acc = 0; for (i = 0; i < list.length; i++) { acc += list[i].w; if (r < acc) return list[i]; } return list[list.length - 1]; }
   function gamble(g) {
     if (st.spinning || coins < g.price) return;
@@ -355,8 +379,8 @@
     var t = 0, iv = setInterval(function () {
       el.textContent = rnd3(); t++;
       if (t > 8) {
-        clearInterval(iv); prize.apply(); st.spinning = false;
-        el.className = 'gambleres show' + (prize.jackpot ? ' jackpot' : ''); el.textContent = prize.txt;
+        clearInterval(iv); var detail = prize.apply(); st.spinning = false;
+        el.className = 'gambleres show' + (prize.jackpot ? ' jackpot' : ''); el.textContent = prize.txt + (detail ? ' → ' + detail : '');
         sfx(prize.jackpot ? 'bonus' : 'life'); if (prize.jackpot) confettiBurst(['🎉', '💎', '🪙', '🎊', '⭐', '🏆']);
         saveInv(); buildShop(); updateCoinsUI();
         if (!$('study').classList.contains('hidden') && st.juegoEf) renderLifes();
@@ -433,7 +457,9 @@
     if (st.juegoEf) {
       show('hud');
       hide('showTest'); hide('navFlash'); hide('nextBtn'); $('nextBtn').textContent = 'Siguiente ▶';
-      buildOptions(q); renderLifes(); updateScoreUI();
+      buildOptions(q);
+      if (st.autoX2 && !st.pendingX2 && (inv.cx2 || 0) > 0) { inv.cx2--; saveInv(); st.pendingX2 = true; }   // ×2 automático
+      renderLifes(); updateScoreUI();
       if (st.tiempo && !st.eink) startTimer(); else noTimer();   // en Kindle sin cuenta atrás (evita parpadeo e-ink)
       if (st.eink) { show('postActions'); updatePostActions(q); }   // barra fija (Buena/Descartar/Siguiente) en Kindle
     } else {
@@ -502,9 +528,10 @@
   }
   function esDura(q, idx, timeout) {
     var fallo = timeout || idx !== q.correcta;
-    var comodin = Object.keys(st.cardUsed || {}).length > 0;
-    var lenta = (Date.now() - (st.cardStart || Date.now())) > 25000;   // dudó más de la cuenta (>25 s)
-    return fallo || comodin || lenta;
+    var cu = st.cardUsed || {};
+    var ayuda = cu.c5050 || cu.cpub || cu.ctel;                        // solo pistas de verdad (no escudo/×2/tiempo)
+    var lenta = (Date.now() - (st.cardStart || Date.now())) > 30000;   // dudó más de la cuenta (>30 s)
+    return fallo || ayuda || lenta;
   }
   function onAnswer(q, idx, btn) {
     if (st.juegoEf && st.answered) return;
@@ -613,6 +640,12 @@
       b.addEventListener('click', function () { useLife(d.key); });
       wrap.appendChild(b);
     });
+    updateAutoX2Btn();
+  }
+  function updateAutoX2Btn() {
+    var b = $('autoX2Btn'); if (!b) return;
+    b.classList.toggle('on', st.autoX2);
+    b.textContent = st.autoX2 ? ('⚡ ×2 auto ON · quedan ' + (inv.cx2 || 0)) : '⚡ ×2 auto: OFF';
   }
   function disableLifes() { Array.prototype.forEach.call($('lifes').children, function (b) { b.disabled = true; }); }
 
@@ -728,6 +761,12 @@
     $('likeBtn').addEventListener('click', toggleFav);
     $('discBtn').addEventListener('click', discardCurrent);
     $('paNext').addEventListener('click', function () { go(1); });
+    $('autoX2Btn').addEventListener('click', function () {
+      st.autoX2 = !st.autoX2; saveCfg();
+      // si lo activas a mitad de pregunta (sin responder aún), arma el ×2 al momento
+      if (st.autoX2 && !st.pendingX2 && (inv.cx2 || 0) > 0 && st.juegoEf && !st.answered) { inv.cx2--; saveInv(); st.pendingX2 = true; }
+      updateAutoX2Btn(); if (st.juegoEf) renderLifes();
+    });
     $('einkBtn').addEventListener('click', function () {
       st.eink = !st.eink; applyEink(); saveCfg();
       st.juegoEf = st.juego || st.eink; stopTimer(); renderCard();   // aplica el cambio en la tarjeta actual

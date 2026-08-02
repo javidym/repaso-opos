@@ -196,6 +196,12 @@
   .life.on{border-color:var(--dorado);box-shadow:0 0 0 2px color-mix(in srgb,var(--dorado) 40%,transparent) inset}
   .life.x2{color:var(--morado)} .life.t{color:var(--azul)} .life.f{color:var(--rojo)} .life.sh{color:var(--verde)}
 
+  .autox2{width:100%;margin-top:8px;border:1.5px solid var(--morado);background:transparent;color:var(--morado);
+    font-weight:800;font-size:13px;border-radius:10px;padding:9px}
+  .autox2.on{background:var(--morado);color:#fff}
+  body.eink .autox2{border:2px solid #000 !important;background:#fff !important;color:#000 !important}
+  body.eink .autox2.on{background:#000 !important;color:#fff !important}
+
   .chiprow{display:flex;align-items:center;justify-content:space-between;gap:8px}
   .cardacts{display:flex;gap:6px}
   .miniact{width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);
@@ -303,6 +309,10 @@
   .shophead{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);
     margin:14px 2px 4px;padding-top:8px;border-top:1px solid var(--line)}
   .shophead:first-child{border-top:0;padding-top:0;margin-top:4px}
+  .trophycase{display:flex;flex-wrap:wrap;gap:8px;font-size:30px;background:var(--panel2);border:1.5px solid var(--line);
+    border-radius:12px;padding:12px;margin-bottom:8px;min-height:30px}
+  .trophycase .empty{font-size:12.5px;color:var(--muted);font-weight:600}
+  body.eink .trophycase{background:#fff !important;border:2px solid #000}
   .confetti{position:fixed;top:-30px;z-index:60;pointer-events:none;will-change:transform,opacity;
     animation:confall linear forwards}
   @keyframes confall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(102vh) rotate(540deg);opacity:.85}}
@@ -325,6 +335,15 @@
 
   .footnote{text-align:center;font-size:11px;color:var(--muted);margin-top:26px}
   .empty{background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--soft);font-size:14px;margin-top:10px}
+
+  /* ---------- TABLET EN HORIZONTAL (p. ej. iPad 10") ---------- */
+  /* Las 4 opciones en 2×2 para verlas de un golpe. No afecta a móvil vertical ni al modo ebook (body.eink). */
+  @media (orientation:landscape) and (min-width:720px){
+    body:not(.eink) .app{max-width:940px}
+    body:not(.eink) .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    body:not(.eink) .scene{min-height:180px}
+    body:not(.eink) .front .qtext{font-size:19px}
+  }
 
   /* ---------- MODO KINDLE / E-INK ---------- */
   body.eink{
@@ -514,6 +533,7 @@
       </div>
       <div class="timebar"><i id="timeBar"></i></div>
       <div class="lifes" id="lifes"></div>
+      <button class="autox2" id="autoX2Btn" type="button">⚡ ×2 auto: OFF</button>
     </div>
 
     <div class="chiprow">
