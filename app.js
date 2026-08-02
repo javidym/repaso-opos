@@ -300,8 +300,8 @@
     var keys = ['bg', 'bg2', 'panel', 'panel2', 'line', 'ink', 'soft', 'muted', 'azul', 'azul-d', 'verde', 'verde-d', 'rojo', 'naranja', 'morado', 'dorado'];
     keys.forEach(function (k) { root.style.removeProperty('--' + k); });
     if (t && t.vars) keys.forEach(function (k) { if (t.vars[k]) root.style.setProperty('--' + k, t.vars[k]); });
-    if (t && t.bgimg) document.body.style.background = t.bgimg + ' fixed';   // temas de degradado
-    else document.body.style.removeProperty('background');
+    if (t && t.bgimg) { document.body.style.background = t.bgimg + ' fixed'; document.documentElement.style.background = t.bgimg + ' fixed'; }   // degradado también en html
+    else { document.body.style.removeProperty('background'); document.documentElement.style.removeProperty('background'); }
   }
   function shopHead(wrap, txt) { var h = document.createElement('div'); h.className = 'shophead'; h.textContent = txt; wrap.appendChild(h); }
   function shopRow(wrap, ic, name, desc, sub, label, disabled, cls, onClick) {
