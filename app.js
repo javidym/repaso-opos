@@ -446,7 +446,7 @@
     var q = st.mazo[st.i];
     st.volteada = false; st.answered = false; st.cardUsed = {}; st.cardStart = Date.now();
     st.order = makeOrder(q); st.correctDisp = st.order.indexOf(q.correcta);   // barajar opciones cada vez
-    $('card3d').classList.remove('flip');
+    $('card3d').classList.remove('flip'); var _sc = document.querySelector('.scene'); if (_sc) _sc.style.minHeight = '';
     $('pgCur').textContent = st.i + 1; $('pgLabel').textContent = 'Tarjeta ' + (st.i + 1);
     $('pgBar').style.width = ((st.i) / st.mazo.length * 100) + '%';
     var badge = { dom: '🟢', fal: '🔴', nue: '⚪' }[estadoDe(q.id)] || '';
@@ -496,8 +496,18 @@
     $('aText').innerHTML = html;
   }
   function hintExpl() { var h = $('tapHint'); h.textContent = '👆 Toca la tarjeta para ver la explicación'; h.classList.add('pulse'); }
+  function fitScene() {
+    // al ver el reverso, la escena crece para que la cita/explicación no se corten (ni en horizontal ni con citas largas)
+    var scene = document.querySelector('.scene'); if (!scene || st.eink) return;
+    if (st.volteada) {
+      var back = document.querySelector('.back'), front = document.querySelector('.front');
+      var need = Math.max(back ? back.scrollHeight : 0, front ? front.scrollHeight : 0);
+      if (need > 0) scene.style.minHeight = (need + 6) + 'px';
+    } else { scene.style.minHeight = ''; }
+  }
   function flip() {
     st.volteada = !st.volteada; $('card3d').classList.toggle('flip', st.volteada);
+    fitScene();
     var h = $('tapHint');
     if (st.volteada) { h.textContent = 'Toca para volver a la pregunta'; h.classList.remove('pulse'); }
     else { h.textContent = 'Toca la tarjeta para ver la respuesta'; h.classList.add('pulse'); }
