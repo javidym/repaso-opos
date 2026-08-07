@@ -176,7 +176,22 @@
   .opt.wrong .k{background:var(--rojo);color:#fff;border-color:var(--rojo)}
   .opt.lock{pointer-events:none}
   .opt.dim{opacity:.55}
-  .opt.gone{opacity:.28;text-decoration:line-through;pointer-events:none}
+  .opt.gone{display:none}
+  .opt.multi.sel{border-color:var(--azul);background:color-mix(in srgb,var(--azul) 16%,var(--panel))}
+  .opt.multi.sel .k{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .opt.missed{border-color:var(--naranja);background:color-mix(in srgb,var(--naranja) 16%,var(--panel))}
+  .opt.missed .k{background:var(--naranja);color:#fff;border-color:var(--naranja)}
+  .multibar{display:flex;gap:9px;margin-top:12px}
+  .multibar .mb{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:13px;font-weight:800;font-size:14px}
+  .multibar .check{background:var(--verde);border-color:var(--verde);color:#fff}
+  .multibar .count{background:var(--panel2);color:var(--azul);border-color:var(--azul)}
+  .multibar .mb:disabled{opacity:.5}
+  .counthint{margin-top:8px;text-align:center;font-weight:800;color:var(--azul);
+    background:color-mix(in srgb,var(--azul) 10%,var(--panel));border:1px solid var(--azul-d);border-radius:10px;padding:9px}
+  body.eink .opt.multi.sel{border-width:3px}
+  body.eink .opt.missed{text-decoration:underline}
+  body.eink .multibar .mb{background:#fff !important;color:#000 !important;border:2px solid #000 !important}
+  body.eink .counthint{background:#fff !important;color:#000 !important;border:2px solid #000}
   .opt.picked{box-shadow:0 0 0 3px color-mix(in srgb,var(--azul) 45%,transparent) inset}
 
   /* ---- HUD modo juego ---- */
@@ -581,6 +596,13 @@
       <button class="pa disc" id="discBtn">🗑️ Descartar</button>
       <button class="pa next" id="paNext">Siguiente ▶</button>
     </div>
+
+    <!-- barra de multirespuesta (tema 29) -->
+    <div id="multiBar" class="multibar hidden">
+      <button class="mb check" id="checkBtn">✅ Comprobar</button>
+      <button class="mb count" id="countBtn">🔢 ¿Cuántas marcar?</button>
+    </div>
+    <div id="countHint" class="counthint hidden"></div>
 
     <div class="studyfoot">
       <button class="showtest" id="showTest">📝 Ver opciones (test)</button>

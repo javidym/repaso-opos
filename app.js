@@ -50,10 +50,17 @@
     { key: 'cpub', ic: '📊', name: 'Pack ×5 de Público', desc: 'Cinco comodines del público', qty: 5, price: 4000 },
     { key: 'ctime', ic: '⏱', name: 'Pack ×10 de +15 s', desc: 'Diez ampliaciones de tiempo', qty: 10, price: 1200 }
   ];
-  // Extras: regalos, efectos y mejoras
+  // Cajas sorpresa: para fundir puntos rápido (dan uno de CADA comodín ×N)
+  var BOXES = [
+    { key: 'caja', ic: '🎁', name: 'Caja sorpresa', desc: 'Uno de cada comodín', qty: 1, price: 2500 },
+    { key: 'caja3', ic: '📦', name: 'Caja grande', desc: 'Tres de cada comodín', qty: 3, price: 6000 },
+    { key: 'caja6', ic: '🧰', name: 'Caja enorme', desc: 'Seis de cada comodín', qty: 6, price: 11000 },
+    { key: 'caja12', ic: '🎒', name: 'Cofre', desc: 'Doce de cada comodín + 3000 🪙', qty: 12, coins: 3000, price: 20000 },
+    { key: 'caja25', ic: '🏆', name: 'Cofre gigante', desc: 'Veinticinco de cada comodín + 8000 🪙', qty: 25, coins: 8000, price: 40000 },
+    { key: 'caja50', ic: '💎', name: 'Baúl legendario', desc: '¡Cincuenta de cada comodín + 20000 🪙!', qty: 50, coins: 20000, price: 85000 }
+  ];
+  // Extras: efectos y mejoras
   var EXTRAS = [
-    { key: 'caja', ic: '🎁', name: 'Caja sorpresa', desc: 'Uno de CADA comodín, todos de golpe', price: 2500, kind: 'box', qty: 1 },
-    { key: 'caja3', ic: '🎁', name: 'Caja grande', desc: 'TRES de cada comodín de una tacada', price: 6000, kind: 'box', qty: 3 },
     { key: 'confeti', ic: '🎉', name: 'Fiesta de aciertos', desc: 'Lluvia de confeti al acertar (se puede quitar)', price: 800, kind: 'toggle', flag: 'confeti' },
     { key: 'estrellas', ic: '🌟', name: 'Lluvia de estrellas', desc: 'Estrellas cayendo al acertar', price: 800, kind: 'toggle', flag: 'estrellas' },
     { key: 'monedas', ic: '💰', name: 'Lluvia de monedas', desc: 'Monedas volando al acertar', price: 800, kind: 'toggle', flag: 'monedas' },
@@ -124,7 +131,8 @@
     });
   }
   // orden de presentación de las 4 opciones (barajado, salvo preguntas meta)
-  function makeOrder(q) { var base = q.opciones.map(function (o, i) { return i; }); return esMeta(q.opciones) ? base : shuffle(base); }
+  function makeOrder(q) { var base = q.opciones.map(function (o, i) { return i; }); return (esMeta(q.opciones) || esMulti(q)) ? base : shuffle(base); }
+  function esMulti(q) { return Array.isArray(q.multi); }   // pregunta de marcar TODAS las ciertas (tema 29)
 
   /* ---------------- SONIDO ---------------- */
   var actx = null;
@@ -315,6 +323,8 @@
   }
   function buildShop() {
     var wrap = $('shopList'); wrap.innerHTML = '';
+    shopHead(wrap, '🎁 Cajas sorpresa (funde puntos rápido)');
+    BOXES.forEach(function (it) { shopRow(wrap, it.ic, it.name, it.desc, '', '🪙 ' + it.price, coins < it.price, '', function () { buyBox(it); }); });
     shopHead(wrap, '🃏 Comodines');
     SHOP.forEach(function (it) { shopRow(wrap, it.ic, it.name, it.desc, 'Tienes: ' + (inv[it.key] || 0), '🪙 ' + it.price, coins < it.price, '', function () { buyItem(it); }); });
     shopHead(wrap, '📦 Packs (más baratos por unidad)');
@@ -353,6 +363,7 @@
   function afterBuy() { sfx('bonus'); buildShop(); updateCoinsUI(); if (!$('study').classList.contains('hidden') && st.juegoEf) renderLifes(); }
   function buyItem(it) { if (coins < it.price) return; coins -= it.price; inv[it.key] = (inv[it.key] || 0) + 1; saveCoins(); saveInv(); afterBuy(); }
   function buyPack(it) { if (coins < it.price) return; coins -= it.price; inv[it.key] = (inv[it.key] || 0) + it.qty; saveCoins(); saveInv(); afterBuy(); }
+  function buyBox(it) { if (coins < it.price) return; coins -= it.price; giveBox(it.qty); if (it.coins) giveCoins(it.coins); saveCoins(); saveInv(); afterBuy(); }
   function buyExtra(it) {
     if (it.kind === 'toggle' && cosmet.extras.indexOf(it.key) >= 0) { cosmet[it.flag] = !cosmet[it.flag]; saveCosmet(); buildShop(); return; }
     if (it.kind === 'upgrade' && cosmet[it.flag] >= it.val) return;
@@ -457,6 +468,18 @@
     $('pointsPop').className = 'pointspop'; $('pointsPop').textContent = '';
     hide('infoMsg'); $('infoMsg').textContent = '';
     hide('knewWrap'); hide('postActions'); hide('optsWrap'); $('optsWrap').innerHTML = ''; resetDiscBtn();
+    hide('multiBar'); hide('countHint');
+    if (esMulti(q)) {   // ===== modo multirespuesta (tema 29) =====
+      hide('showTest'); hide('navFlash'); hide('nextBtn'); $('nextBtn').textContent = 'Siguiente ▶';
+      buildMulti(q);
+      if (st.juegoEf) {
+        show('hud'); renderLifes(); updateScoreUI();
+        if (st.autoX2 && !st.pendingX2 && (inv.cx2 || 0) > 0) { inv.cx2--; saveInv(); st.pendingX2 = true; }
+        if (st.tiempo && !st.eink) startTimer(); else noTimer();
+      } else { hide('hud'); }
+      if (st.eink) { show('postActions'); updatePostActions(q); }
+      return;
+    }
     if (st.juegoEf) {
       show('hud');
       hide('showTest'); hide('navFlash'); hide('nextBtn'); $('nextBtn').textContent = 'Siguiente ▶';
@@ -488,6 +511,13 @@
   function formatAnswer(a) { return a.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function renderBack(q, chosen) {
+    if (esMulti(q)) {
+      var m = q.multi || [], h2 = '';
+      h2 += '<div class="ansok"><span class="oktxt">✔ Cierto: ' + (m.length ? m.map(function (i) { return '«' + esc(q.opciones[i]) + '»'; }).join(' · ') : 'ninguna de las opciones') + '</span></div>';
+      if (q.a) h2 += '<div class="ansexp"><span class="exlab">Por qué</span>' + formatAnswer(q.a) + '</div>';
+      if (q.cita) h2 += '<div class="anscita"><span class="exlab">📚 Cita (APA)</span>' + formatAnswer(q.cita) + '</div>';
+      $('aText').innerHTML = h2; return;
+    }
     var opc = q.opciones && q.opciones.length, html = '';
     if (opc) html += '<div class="ansok"><span class="okbadge">' + LETRAS[st.correctDisp] + '</span><span class="oktxt">' + esc(q.opciones[q.correcta]) + '</span></div>';
     html += '<div class="ansexp"><span class="exlab">Por qué</span>' + formatAnswer(q.a) + '</div>';
@@ -523,6 +553,39 @@
       wrap.appendChild(b);
     });
     show('optsWrap');
+  }
+  // ----- multirespuesta -----
+  function buildMulti(q) {
+    var wrap = $('optsWrap'); wrap.innerHTML = '';
+    q.opciones.forEach(function (txt, disp) {
+      var b = document.createElement('button'); b.className = 'opt multi'; b.type = 'button'; b.dataset.idx = disp;
+      b.innerHTML = '<span class="k">' + LETRAS[disp] + '</span><span>' + esc(txt) + '</span>';
+      b.addEventListener('click', function () { if (st.answered) return; b.classList.toggle('sel'); });
+      wrap.appendChild(b);
+    });
+    show('optsWrap'); show('multiBar'); $('checkBtn').disabled = false;
+    $('countHint').textContent = ''; hide('countHint');
+  }
+  function checkMulti(q, timeout) {
+    if (st.answered) return;
+    st.answered = true; stopTimer(); disableLifes(); $('checkBtn').disabled = true;
+    var correctSet = q.multi || [], btns = $('optsWrap').children, fully = true;
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i], disp = +b.dataset.idx, isC = correctSet.indexOf(disp) >= 0, isS = b.classList.contains('sel');
+      b.classList.add('lock');
+      if (isC && isS) b.classList.add('correct');
+      else if (isC && !isS) { b.classList.add('missed'); fully = false; }
+      else if (!isC && isS) { b.classList.add('wrong'); fully = false; }
+      else b.classList.add('dim');
+    }
+    if (timeout) fully = false;
+    renderBack(q, null); st.sabidas[q.id] = fully; hide('multiBar');
+    if (st.juegoEf) {
+      if (fully) { onCorrect(q); hide('knewWrap'); $('nextBtn').textContent = 'Siguiente ▶'; show('nextBtn'); }
+      else onWrong(q, false);
+      if (!fully || st.cardUsed.c5050 || st.cardUsed.cpub || st.cardUsed.ctel) scheduleRepeat(q);
+    } else { show('postActions'); updatePostActions(q); $('nextBtn').textContent = 'Siguiente ▶'; show('nextBtn'); }
+    hintExpl();
   }
   // Repaso adaptativo: re-inyecta una pregunta "dura" unas cartas más adelante en la misma partida.
   function scheduleRepeat(q) {
@@ -630,7 +693,9 @@
     show('postActions'); updatePostActions(q);
   }
   function onTimeout() {
-    if (st.answered) return; st.answered = true; var q = st.mazo[st.i];
+    if (st.answered) return; var q = st.mazo[st.i];
+    if (esMulti(q)) { checkMulti(q, true); return; }
+    st.answered = true;
     var btns = $('optsWrap').children;
     for (var i = 0; i < btns.length; i++) { var b = btns[i]; b.classList.add('lock'); if (parseInt(b.dataset.orig, 10) === q.correcta) b.classList.add('correct'); else b.classList.add('dim'); }
     renderBack(q, null); disableLifes(); onWrong(q, true); scheduleRepeat(q); hintExpl();
@@ -774,6 +839,8 @@
     $('likeBtn').addEventListener('click', toggleFav);
     $('discBtn').addEventListener('click', discardCurrent);
     $('paNext').addEventListener('click', function () { go(1); });
+    $('checkBtn').addEventListener('click', function () { var q = st.mazo[st.i]; if (esMulti(q)) checkMulti(q, false); });
+    $('countBtn').addEventListener('click', function () { var q = st.mazo[st.i]; if (!esMulti(q)) return; var n = (q.multi || []).length; $('countHint').textContent = n === 0 ? 'Debes marcar: NINGUNA' : ('Debes marcar: ' + n + (n === 1 ? ' opción' : ' opciones')); show('countHint'); });
     $('autoX2Btn').addEventListener('click', function () {
       st.autoX2 = !st.autoX2; saveCfg();
       // si lo activas a mitad de pregunta (sin responder aún), arma el ×2 al momento
