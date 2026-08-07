@@ -510,6 +510,60 @@
   }
   function formatAnswer(a) { return a.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  // Listados de referencia del Tema 30 (se muestran completos al girar la tarjeta)
+  var LISTAS30 = {
+    transversal: { t: 'Elementos transversales (8)', items: [
+      'Comprensión lectora, expresión oral y escrita', 'Comunicación audiovisual', 'Competencia digital',
+      'Fomento de la creatividad', 'Educación cívica y en valores', 'Igualdad de género',
+      'Educación para la salud', 'Consumo responsable'] },
+    ods: { t: 'ODS · Agenda 2030 (17) · las 5P', nota: 'Personas 1-5 · Prosperidad 7-11 · Planeta 6 y 12-15 · Paz 16 · Pacto 17. Clave en educación: 4, 5, 10, 12 y 13.', items: [
+      'Fin de la pobreza — Personas', 'Hambre cero — Personas', 'Salud y bienestar — Personas',
+      'Educación de calidad — Personas', 'Igualdad de género — Personas', 'Agua limpia y saneamiento — Planeta',
+      'Energía no contaminante — Prosperidad', 'Crecimiento económico — Prosperidad',
+      'Industria, innovación e infraestructura — Prosperidad', 'Reducción de las desigualdades — Prosperidad',
+      'Ciudades y comunidades sostenibles — Prosperidad', 'Consumo responsable — Planeta',
+      'Acción por el clima — Planeta', 'Vida submarina — Planeta', 'Vida de ecosistemas terrestres — Planeta',
+      'Paz, justicia e instituciones sólidas — Paz', 'Alianzas para lograr los objetivos — Pacto'] },
+    reto: { t: 'Retos del siglo XXI (7)', items: [
+      'Uso de las TIC', 'Emergencia climática', 'Convivencia', 'Resiliencia',
+      'Aprender a lo largo de la vida', 'Desigualdad', 'Consumo responsable'] },
+    objetivo: { t: 'Objetivos generales de etapa (17)', nota: '"Convivo hablando y sabiendo que creo y cuido."', items: [
+      'Convivencia y ciudadanía — Convivir', 'Trabajo y esfuerzo — Convivir', 'Resolución de conflictos — Convivir',
+      'Respeto e igualdad — Convivir', 'Lenguas oficiales — Hablar', 'Lengua extranjera — Hablar',
+      'Plurilingüismo — Hablar', 'Competencia matemática — Saber', 'Conocimiento del entorno — Saber',
+      'Competencia digital — Crear', 'Expresión artística — Crear', 'Salud y bienestar — Cuidar',
+      'Respeto a los animales — Cuidar', 'Desarrollo afectivo — Cuidar', 'Movilidad segura — Cuidar',
+      'Sostenibilidad — Cuidar', 'Respeto a la comunidad educativa — Cuidar'] },
+    principio: { t: 'Principios pedagógicos (7)', nota: '"Gradualmente jugamos e investigamos la tecnología activa a las familias y eso le da significado."', items: [
+      'Gradualidad', 'Juego', 'Investigación e interdisciplinariedad', 'Tecnología', 'Actividad', 'Familia', 'Significativo'] },
+    ce: { t: 'Competencias específicas por área (pin 9·8·8·6)', groups: {
+      'Lengua Castellana y Literatura (9)': ['Multilingüismo', 'Comprensión oral', 'Comprensión escrita', 'Expresión oral', 'Expresión escrita', 'Interacción', 'Mediación', 'Lectura autónoma', 'Competencia literaria'],
+      'Conocimiento del Medio (8)': ['Competencia digital', 'Proyectos, investigación y pensamiento computacional', 'Pensamiento científico', 'Hábitos saludables', 'Impacto humano y sostenibilidad', 'Conciencia histórica', 'Organización política y territorial', 'Patrimonio'],
+      'Matemáticas (8)': ['Resolución de problemas', 'Razonamiento y conjeturas', 'Modelización', 'Pensamiento computacional', 'Representaciones', 'Comunicación matemática', 'Conexiones con la vida real', 'Destrezas afectivas'],
+      'Educación Artística (6)': ['Patrimonio y cultura visual', 'Valoración de obras', 'Terminología artística', 'Técnicas y materiales', 'Recursos digitales', 'Proceso creativo colaborativo'] } },
+    saber: { t: 'Saberes/bloques por área (pin 3·3·6·2)', groups: {
+      'Lengua Castellana y Literatura (3)': ['Lengua y uso', 'Estrategias comunicativas', 'Lectura y literatura'],
+      'Conocimiento del Medio (3)': ['Cultura científica', 'Tecnología y digitalización', 'Sociedades y territorios'],
+      'Matemáticas (6)': ['Sentido numérico', 'Estimación y medición', 'Espacial-geométrico', 'Incertidumbre y probabilidad', 'Análisis de datos y estadística', 'Pensamiento computacional'],
+      'Educación Artística (2)': ['Percepción y análisis', 'Experimentación y creación'] } }
+  };
+  function renderList30(cat) {
+    var L = LISTAS30[cat]; if (!L) return '';
+    var body = '';
+    if (L.groups) {
+      for (var g in L.groups) {
+        body += '<div class="listgrp"><b>' + esc(g) + '</b><ol>';
+        L.groups[g].forEach(function (it) { body += '<li>' + esc(it) + '</li>'; });
+        body += '</ol></div>';
+      }
+    } else {
+      body += '<ol class="listol">';
+      L.items.forEach(function (it) { body += '<li>' + esc(it) + '</li>'; });
+      body += '</ol>';
+    }
+    if (L.nota) body += '<div class="listnota">' + esc(L.nota) + '</div>';
+    return '<div class="anslist"><span class="exlab">📋 Listado completo · ' + esc(L.t) + '</span>' + body + '</div>';
+  }
   function renderBack(q, chosen) {
     if (esMulti(q)) {
       var m = q.multi || [], h2 = '';
@@ -523,6 +577,7 @@
     html += '<div class="ansexp"><span class="exlab">Por qué</span>' + formatAnswer(q.a) + '</div>';
     if (q.cita) html += '<div class="anscita"><span class="exlab">📚 Cita (APA)</span>' + formatAnswer(q.cita) + '</div>';
     if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen">Marcaste la <b>' + LETRAS[st.order.indexOf(chosen)] + '</b> («' + esc(q.opciones[chosen]) + '»): no es la válida.</div>';
+    if (q.cat) html += renderList30(q.cat);
     $('aText').innerHTML = html;
   }
   function hintExpl() { var h = $('tapHint'); h.textContent = '👆 Toca la tarjeta para ver la explicación'; h.classList.add('pulse'); }

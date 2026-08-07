@@ -1,6 +1,6 @@
 /* Service worker · Repaso OPOS
    Sube el número de versión cuando cambies preguntas.js o el código. */
-var VERSION = 'repaso-opos-v55';
+var VERSION = 'repaso-opos-v56';
 var ASSETS = [
   './',
   './index.html',
