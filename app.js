@@ -564,6 +564,25 @@
     if (L.nota) body += '<div class="listnota">' + esc(L.nota) + '</div>';
     return '<div class="anslist"><span class="exlab">📋 Listado completo · ' + esc(L.t) + '</span>' + body + '</div>';
   }
+  // Tema 27: libros de psicología/desarrollo con títulos parecidos (para no confundirlos).
+  // Se muestran juntos en el reverso, con una clave, resaltando el de la tarjeta actual.
+  var PSICO27 = [
+    { a: 'Piaget', o: 'Psicología de la inteligencia', y: 1975, e: 'Psiqué', k: 'los estadios del desarrollo de la inteligencia' },
+    { a: 'Vygotsky', o: 'Pensamiento y lenguaje', y: 2010, e: 'Paidós', k: 'la zona de desarrollo próximo (lo social)' },
+    { a: 'Ausubel', o: 'Adquisición y retención del conocimiento', y: 2002, e: 'Paidós', k: 'el aprendizaje significativo' },
+    { a: 'Beltrán y Bueno', o: 'Psicología de la educación', y: 1987, e: 'Eudema', k: 'manual GENERAL de psicología educativa' },
+    { a: 'Palacios y Coll', o: 'Desarrollo psicológico y educación', y: 2004, e: 'Alianza', k: 'obra COLECTIVA de referencia (varios volúmenes)' },
+    { a: 'Córdoba y Descals', o: 'Psicología del desarrollo en edad escolar', y: 2010, e: 'Pirámide', k: 'el desarrollo centrado en la ETAPA ESCOLAR (6-12)' }
+  ];
+  function renderPsico27(cita) {
+    if (!cita || !PSICO27.some(function (b) { return cita.indexOf(b.o) >= 0; })) return '';
+    var body = '<div class="anslist psico"><span class="exlab">🧠 No los confundas · Psicología y desarrollo</span><ul class="psicolist">';
+    PSICO27.forEach(function (b) {
+      var cur = cita.indexOf(b.o) >= 0;
+      body += '<li' + (cur ? ' class="cur"' : '') + '><b>' + esc(b.a) + '</b> · «' + esc(b.o) + '» (' + b.y + ', ' + esc(b.e) + ') → ' + esc(b.k) + '</li>';
+    });
+    return body + '</ul></div>';
+  }
   function renderBack(q, chosen) {
     if (esMulti(q)) {
       var m = q.multi || [], h2 = '';
@@ -578,6 +597,7 @@
     if (q.cita) html += '<div class="anscita"><span class="exlab">📚 Cita (APA)</span>' + formatAnswer(q.cita) + '</div>';
     if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen">Marcaste la <b>' + LETRAS[st.order.indexOf(chosen)] + '</b> («' + esc(q.opciones[chosen]) + '»): no es la válida.</div>';
     if (q.cat) html += renderList30(q.cat);
+    if (q.tema === 27) html += renderPsico27(q.cita);
     $('aText').innerHTML = html;
   }
   function hintExpl() { var h = $('tapHint'); h.textContent = '👆 Toca la tarjeta para ver la explicación'; h.classList.add('pulse'); }

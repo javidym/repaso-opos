@@ -172,6 +172,18 @@
   body.eink .anslist{background:#fff !important;border:2px solid #000}
   body.eink .anslist .exlab,body.eink .anslist .listgrp b{color:#000 !important}
   body.eink .anslist .listnota{color:#000 !important}
+  .anslist.psico{background:color-mix(in srgb,var(--azul) 8%,var(--panel));
+    border-color:color-mix(in srgb,var(--azul) 40%,var(--line))}
+  .anslist.psico .exlab{color:var(--azul)}
+  .psicolist{list-style:none;margin:4px 0 0;padding:0}
+  .psicolist li{margin:3px 0;padding:5px 8px;border-radius:8px;font-size:12.5px;line-height:1.4}
+  .psicolist li b{color:var(--azul)}
+  .psicolist li.cur{background:color-mix(in srgb,var(--verde) 22%,transparent);
+    outline:1px solid color-mix(in srgb,var(--verde) 55%,var(--line))}
+  .psicolist li.cur b{color:var(--verde-d)}
+  body.eink .anslist.psico{background:#fff !important;border:2px solid #000}
+  body.eink .psicolist li b,body.eink .anslist.psico .exlab{color:#000 !important}
+  body.eink .psicolist li.cur{background:#eee !important;outline:2px solid #000}
   .tap-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:10px;min-height:16px}
   .tap-hint.pulse{animation:pulseh 1.8s infinite}
   @keyframes pulseh{50%{opacity:.4}}
