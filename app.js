@@ -583,16 +583,12 @@
     sab_pv: { t: 'Saberes · Educación Plástica y Visual', groups: {
       'B1 · Percepción y análisis': ['Exploración e interpretación del entorno', 'Alfabetización visual y audiovisual'],
       'B2 · Experimentación y creación': ['Técnicas y materiales de expresión gráfico-plástica y de creación visual y audiovisual', 'Procesos de trabajo'] } },
-    sab_ef: { t: 'Saberes · Educación Física (6 bloques)', nota: 'Subbloques pendientes de completar.', items: [
-      'Vida activa y saludable', 'Organización y gestión de la actividad física', 'Resolución de problemas en situaciones motrices', 'Autorregulación emocional e interacción social en situaciones motrices', 'Manifestaciones de la cultura motriz', 'Interacción eficiente y sostenible con el entorno'] },
     sab_val: { t: 'Saberes · Valores Cívicos y Éticos', groups: {
       'B1 · Persona': ['El bienestar físico y emocional', 'La diversidad', 'La igualdad entre hombres y mujeres'],
       'B2 · Paz': ['Resolución de conflictos', 'Los deberes y derechos de las personas'],
       'B3 · Prosperidad': ['Agenda 2030-ODS', 'La desigualdad'],
       'B4 · Planeta': ['Agenda 2030-ODS'],
-      'B5 · Participación': ['Habilidades', 'Ámbitos'] } },
-    sab_le: { t: 'Saberes · Lengua Extranjera (3 bloques)', nota: 'Subbloques pendientes de completar.', items: [
-      'Lengua y uso', 'Estrategias comunicativas', 'Cultura y sociedad'] }
+      'B5 · Participación': ['Habilidades', 'Ámbitos'] } }
   };
   function renderList30(cat) {
     var L = LISTAS30[cat]; if (!L) return '';
