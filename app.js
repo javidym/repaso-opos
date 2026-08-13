@@ -577,9 +577,6 @@
       'B1 · Cultura científica': ['Iniciación en la actividad científica', 'La vida en nuestro planeta', 'Materia, fuerzas y energía'],
       'B2 · Tecnología y digitalización': ['Digitalización del entorno personal de aprendizaje', 'Proyectos de diseño y pensamiento computacional'],
       'B3 · Sociedades y territorios': ['Retos del mundo actual', 'Sociedades en el tiempo', 'Alfabetización cívica', 'Conciencia ecosocial'] } },
-    sab_mus: { t: 'Saberes · Música y Danza', groups: {
-      'B1 · Percepción y análisis': ['Contextos musicales y culturales'],
-      'B2 · Interpretación y creación': ['Expresión individual y colectiva', 'Propuestas artísticas'] } },
     sab_pv: { t: 'Saberes · Educación Plástica y Visual', groups: {
       'B1 · Percepción y análisis': ['Exploración e interpretación del entorno', 'Alfabetización visual y audiovisual'],
       'B2 · Experimentación y creación': ['Técnicas y materiales de expresión gráfico-plástica y de creación visual y audiovisual', 'Procesos de trabajo'] } },
