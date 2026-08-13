@@ -534,8 +534,11 @@
       'Competencia digital — Crear', 'Expresión artística — Crear', 'Salud y bienestar — Cuidar',
       'Respeto a los animales — Cuidar', 'Desarrollo afectivo — Cuidar', 'Movilidad segura — Cuidar',
       'Sostenibilidad — Cuidar', 'Respeto a la comunidad educativa — Cuidar'] },
-    principio: { t: 'Principios pedagógicos (7)', nota: '"Gradualmente jugamos e investigamos la tecnología activa a las familias y eso le da significado."', items: [
-      'Gradualidad', 'Juego', 'Investigación e interdisciplinariedad', 'Tecnología', 'Actividad', 'Familia', 'Significativo'] },
+    principio: { t: 'Principios pedagógicos (D 106/2022)', nota: 'Resumida (IPS-DULO): "Inés Previene Significativamente con DUA, Proyectos, Lectura y Orientación". · Oficial: "Inés Participa Previniendo Desastres, Trabajando Especialmente, Promoviendo Orientación Activa, Tiene Proyectos, Usa DUA".', groups: {
+      'Versión resumida (7) · IPS-DULO': ['Inclusión educativa (INCLUSIÓN)', 'Atención a la diversidad y prevención de dificultades (PREVENCIÓN)', 'Aprendizaje significativo que promueva la autonomía (SIGNIFICATIVO)', 'Diseño Universal para el Aprendizaje / DUA', 'Proyectos significativos y resolución colaborativa (PROYECTOS)', 'Tiempo diario de lectura (LECTURA)', 'Orientación educativa y acción tutorial (ORIENTACIÓN)'],
+      'Versión oficial (13)': ['Inclusión educativa', 'Participación y convivencia', 'Prevención de dificultades', 'Desarrollo progresivo (Perfil de salida)', 'Trabajo transversal', 'Especial consideración de las áreas instrumentales', 'Promoción desde todas las áreas', 'Orientación educativa, tutorial y emocional', 'Aprendizaje significativo (autonomía)', 'Tiempo diario de lectura', 'Proyectos significativos', 'Uso de las lenguas oficiales (apoyo)', 'Diseño Universal para el Aprendizaje (DUA)'] } },
+    sda: { t: 'Características de las SDA · enfoque de enseñanza (7)', nota: '"Gradualmente jugamos e investigamos la tecnología activa a las familias y eso le da significado." (NO son los principios pedagógicos.)', items: [
+      'Gradualidad', 'Juego', 'Investigación e interdisciplinariedad', 'Tecnología', 'Actividad', 'Familia', 'Significatividad'] },
     ce: { t: 'Competencias específicas por área (pin 9·8·8·6)', groups: {
       'Lengua Castellana y Literatura (9)': ['Multilingüismo', 'Comprensión oral', 'Comprensión escrita', 'Expresión oral', 'Expresión escrita', 'Interacción', 'Mediación', 'Lectura autónoma', 'Competencia literaria'],
       'Conocimiento del Medio (8)': ['Competencia digital', 'Proyectos, investigación y pensamiento computacional', 'Pensamiento científico', 'Hábitos saludables', 'Impacto humano y sostenibilidad', 'Conciencia histórica', 'Organización política y territorial', 'Patrimonio'],
@@ -571,7 +574,6 @@
     { a: 'Vygotsky', o: 'Pensamiento y lenguaje', y: 2010, e: 'Paidós', k: 'la zona de desarrollo próximo (lo social)' },
     { a: 'Ausubel', o: 'Adquisición y retención del conocimiento', y: 2002, e: 'Paidós', k: 'el aprendizaje significativo' },
     { a: 'Beltrán y Bueno', o: 'Psicología de la educación', y: 1987, e: 'Eudema', k: 'manual GENERAL de psicología educativa' },
-    { a: 'Palacios y Coll', o: 'Desarrollo psicológico y educación', y: 2004, e: 'Alianza', k: 'obra COLECTIVA de referencia (varios volúmenes)' },
     { a: 'Córdoba y Descals', o: 'Psicología del desarrollo en edad escolar', y: 2010, e: 'Pirámide', k: 'el desarrollo centrado en la ETAPA ESCOLAR (6-12)' }
   ];
   function renderPsico27(cita) {
