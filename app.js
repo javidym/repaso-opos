@@ -403,7 +403,12 @@
   }
 
   /* ---------------- SESIÓN ---------------- */
+  // Temas "secuenciales" (seq:true en TEMAS, p. ej. saberes por área): se repasan SIEMPRE
+  // en el orden de autoría (progresivo), sin barajar ni recortar, ignorando los toggles.
+  var SEQTEMAS = new Set();
+  function poolIsSeq(pool) { return pool.length > 0 && pool.every(function (q) { return SEQTEMAS.has(q.tema); }); }
   function ordenarMazo(pool) {
+    if (poolIsSeq(pool)) return pool.slice();   // orden progresivo (saberes)
     if (st.smart) {
       // falladas → sin ver → ⭐ buenas (ya vistas) → resto dominadas.
       // Así, cuando ya has visto todo y empieza a repetirse, salen antes tus buenas.
@@ -423,6 +428,7 @@
   // para ir repasándolas poco a poco, y el 80% con la prioridad normal (falladas + sin ver).
   function buildDeck(pool) {
     var ordered = ordenarMazo(pool);
+    if (poolIsSeq(pool)) return ordered;           // saberes: mazo completo en orden, sin recorte
     var size = st.size;
     if (size <= 0) return ordered;                 // "Todas": sin recorte
     if (!st.smart) return ordered.slice(0, size);  // sin repaso inteligente, comportamiento normal
@@ -556,11 +562,37 @@
       'Conocimiento del Medio (8)': ['Competencia digital', 'Proyectos, investigación y pensamiento computacional', 'Pensamiento científico', 'Hábitos saludables', 'Impacto humano y sostenibilidad', 'Conciencia histórica', 'Organización política y territorial', 'Patrimonio'],
       'Matemáticas (8)': ['Resolución de problemas', 'Razonamiento y conjeturas', 'Modelización', 'Pensamiento computacional', 'Representaciones', 'Comunicación matemática', 'Conexiones con la vida real', 'Destrezas afectivas'],
       'Educación Artística (6)': ['Patrimonio y cultura visual', 'Valoración de obras', 'Terminología artística', 'Técnicas y materiales', 'Recursos digitales', 'Proceso creativo colaborativo'] } },
-    saber: { t: 'Saberes/bloques por área (pin 3·3·6·2)', groups: {
-      'Lengua Castellana y Literatura (3)': ['Lengua y uso', 'Estrategias comunicativas', 'Lectura y literatura'],
-      'Conocimiento del Medio (3)': ['Cultura científica', 'Tecnología y digitalización', 'Sociedades y territorios'],
-      'Matemáticas (6)': ['Sentido numérico', 'Estimación y medición', 'Espacial-geométrico', 'Incertidumbre y probabilidad', 'Análisis de datos y estadística', 'Pensamiento computacional'],
-      'Educación Artística (2)': ['Percepción y análisis', 'Experimentación y creación'] } }
+    sab_lcv: { t: 'Saberes · Lengua Castellana y Valenciana', groups: {
+      'B1 · Lengua y uso': ['Las lenguas y los hablantes'],
+      'B2 · Estrategias comunicativas': ['Saberes comunes', 'Alfabetización informacional', 'Reflexión sobre la lengua', 'Comunicación e interacción oral', 'Comprensión escrita', 'Expresión escrita y multimodal'],
+      'B3 · Lectura y literatura': ['Hábito lector', 'Literatura'] } },
+    sab_mat: { t: 'Saberes · Matemáticas', groups: {
+      'B1 · Sentido numérico': ['Números naturales', 'Operaciones con números naturales', 'Fracciones y decimales'],
+      'B2 · Sentido de la medida': ['Estimación y medición', 'Magnitudes y unidades'],
+      'B3 · Sentido espacial y geométrico': ['Geometría plana y espacial', 'Elementos y estructura'],
+      'B4 · Sentido estocástico': ['Incertidumbre y probabilidad'],
+      'B5 · Análisis estadístico': ['Análisis de datos y cálculos estadísticos'],
+      'B6 · Pensamiento computacional': ['Pensamiento computacional'] } },
+    sab_cm: { t: 'Saberes · Conocimiento del Medio', groups: {
+      'B1 · Cultura científica': ['Iniciación en la actividad científica', 'La vida en nuestro planeta', 'Materia, fuerzas y energía'],
+      'B2 · Tecnología y digitalización': ['Digitalización del entorno personal de aprendizaje', 'Proyectos de diseño y pensamiento computacional'],
+      'B3 · Sociedades y territorios': ['Retos del mundo actual', 'Sociedades en el tiempo', 'Alfabetización cívica', 'Conciencia ecosocial'] } },
+    sab_mus: { t: 'Saberes · Música y Danza', groups: {
+      'B1 · Percepción y análisis': ['Contextos musicales y culturales'],
+      'B2 · Interpretación y creación': ['Expresión individual y colectiva', 'Propuestas artísticas'] } },
+    sab_pv: { t: 'Saberes · Educación Plástica y Visual', groups: {
+      'B1 · Percepción y análisis': ['Exploración e interpretación del entorno', 'Alfabetización visual y audiovisual'],
+      'B2 · Experimentación y creación': ['Técnicas y materiales de expresión gráfico-plástica y de creación visual y audiovisual', 'Procesos de trabajo'] } },
+    sab_ef: { t: 'Saberes · Educación Física (6 bloques)', nota: 'Subbloques pendientes de completar.', items: [
+      'Vida activa y saludable', 'Organización y gestión de la actividad física', 'Resolución de problemas en situaciones motrices', 'Autorregulación emocional e interacción social en situaciones motrices', 'Manifestaciones de la cultura motriz', 'Interacción eficiente y sostenible con el entorno'] },
+    sab_val: { t: 'Saberes · Valores Cívicos y Éticos', groups: {
+      'B1 · Persona': ['El bienestar físico y emocional', 'La diversidad', 'La igualdad entre hombres y mujeres'],
+      'B2 · Paz': ['Resolución de conflictos', 'Los deberes y derechos de las personas'],
+      'B3 · Prosperidad': ['Agenda 2030-ODS', 'La desigualdad'],
+      'B4 · Planeta': ['Agenda 2030-ODS'],
+      'B5 · Participación': ['Habilidades', 'Ámbitos'] } },
+    sab_le: { t: 'Saberes · Lengua Extranjera (3 bloques)', nota: 'Subbloques pendientes de completar.', items: [
+      'Lengua y uso', 'Estrategias comunicativas', 'Cultura y sociedad'] }
   };
   function renderList30(cat) {
     var L = LISTAS30[cat]; if (!L) return '';
@@ -969,6 +1001,7 @@
       if (qa !== qb) return qa - qb;   // los mazos ⚡ (Repaso rápido y Glosario) van primero
       return a.n - b.n;
     });
+    TEMAS.forEach(function (t) { if (t.seq) SEQTEMAS.add(t.n); });   // temas secuenciales (saberes)
     loadStats(); loadDisc(); loadFav(); loadInv(); loadCoins(); loadCosmet(); loadCfg(); applyEink(); applyTheme();
     document.addEventListener('pointerdown', function once() { audio(); document.removeEventListener('pointerdown', once); });
     bindHome(); bindStudy(); bindResults(); renderTemas(); updateCoinsUI();
