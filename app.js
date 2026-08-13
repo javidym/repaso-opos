@@ -534,9 +534,21 @@
       'Competencia digital — Crear', 'Expresión artística — Crear', 'Salud y bienestar — Cuidar',
       'Respeto a los animales — Cuidar', 'Desarrollo afectivo — Cuidar', 'Movilidad segura — Cuidar',
       'Sostenibilidad — Cuidar', 'Respeto a la comunidad educativa — Cuidar'] },
-    principio: { t: 'Principios pedagógicos (D 106/2022)', nota: 'Resumida (IPS-DULO): "Inés Previene Significativamente con DUA, Proyectos, Lectura y Orientación". · Oficial: "Inés Participa Previniendo Desastres, Trabajando Especialmente, Promoviendo Orientación Activa, Tiene Proyectos, Usa DUA".', groups: {
-      'Versión resumida (7) · IPS-DULO': ['Inclusión educativa (INCLUSIÓN)', 'Atención a la diversidad y prevención de dificultades (PREVENCIÓN)', 'Aprendizaje significativo que promueva la autonomía (SIGNIFICATIVO)', 'Diseño Universal para el Aprendizaje / DUA', 'Proyectos significativos y resolución colaborativa (PROYECTOS)', 'Tiempo diario de lectura (LECTURA)', 'Orientación educativa y acción tutorial (ORIENTACIÓN)'],
-      'Versión oficial (13)': ['Inclusión educativa', 'Participación y convivencia', 'Prevención de dificultades', 'Desarrollo progresivo (Perfil de salida)', 'Trabajo transversal', 'Especial consideración de las áreas instrumentales', 'Promoción desde todas las áreas', 'Orientación educativa, tutorial y emocional', 'Aprendizaje significativo (autonomía)', 'Tiempo diario de lectura', 'Proyectos significativos', 'Uso de las lenguas oficiales (apoyo)', 'Diseño Universal para el Aprendizaje (DUA)'] } },
+    principio: { t: 'Principios pedagógicos · art. 6 D 106/2022 (14)', nota: 'Truco para agruparlos (resumen IPS-DULO): Inclusión, Prevención, Significativo, DUA, Proyectos, Lectura, Orientación.', items: [
+      'Desarrollo progresivo de las competencias clave (perfil de salida)',
+      'Inclusión, atención personalizada, participación/convivencia y prevención de dificultades',
+      'Trabajo transversal (lectora, expresión, audiovisual, digital, creatividad, emprendimiento)',
+      'Consideración especial de los aprendizajes instrumentales',
+      'Educación afectivosexual (currículo coeducativo)',
+      'Orientación educativa y acción tutorial',
+      'Educación emocional (empatía)',
+      'Alumnado como centro · aprendizaje significativo (autonomía y reflexión)',
+      'Competencia digital y pensamiento computacional (uso seguro, visión crítica)',
+      'Sostenibilidad y protección del medio ambiente (transición ecológica)',
+      'Hábito lector y biblioteca escolar · tiempo diario de lectura',
+      'Proyectos interdisciplinares y resolución colaborativa de problemas',
+      'Las lenguas en el centro del aprendizaje · TILC (plurilingüismo)',
+      'Lengua extranjera · lenguas oficiales solo como apoyo'] },
     sda: { t: 'Características de las SDA · enfoque de enseñanza (7)', nota: '"Gradualmente jugamos e investigamos la tecnología activa a las familias y eso le da significado." (NO son los principios pedagógicos.)', items: [
       'Gradualidad', 'Juego', 'Investigación e interdisciplinariedad', 'Tecnología', 'Actividad', 'Familia', 'Significatividad'] },
     ce: { t: 'Competencias específicas por área (pin 9·8·8·6)', groups: {
