@@ -637,6 +637,7 @@
     if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen">Marcaste la <b>' + LETRAS[st.order.indexOf(chosen)] + '</b> («' + esc(q.opciones[chosen]) + '»): no es la válida.</div>';
     if (q.cat) html += renderList30(q.cat);
     if (q.tema === 27) html += renderPsico27(q.cita);
+    if (q.temas) html += '<div class="anstemas"><span class="exlab">📌 Útil para el temario</span>' + formatAnswer(q.temas) + '</div>';
     $('aText').innerHTML = html;
   }
   function hintExpl() { var h = $('tapHint'); h.textContent = '👆 Toca la tarjeta para ver la explicación'; h.classList.add('pulse'); }
