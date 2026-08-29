@@ -46,9 +46,16 @@
   ];
   // Packs de comodines (más baratos por unidad)
   var PACKS = [
+    { key: 'cx2', ic: '×2', name: 'Pack ×20 de ×2', desc: 'Veinte dobladores de puntos', qty: 20, price: 4000 },
+    { key: 'cx2', ic: '×2', name: 'Pack ×10 de ×2', desc: 'Diez dobladores de puntos', qty: 10, price: 2200 },
+    { key: 'cx2', ic: '×2', name: 'Pack ×50 de ×2', desc: 'Cincuenta dobladores de puntos', qty: 50, price: 9000 },
     { key: 'c5050', ic: '50:50', name: 'Pack ×5 de 50:50', desc: 'Cinco comodines 50:50 de golpe', qty: 5, price: 2000 },
+    { key: 'c5050', ic: '50:50', name: 'Pack ×20 de 50:50', desc: 'Veinte comodines 50:50', qty: 20, price: 7000 },
     { key: 'cpub', ic: '📊', name: 'Pack ×5 de Público', desc: 'Cinco comodines del público', qty: 5, price: 4000 },
-    { key: 'ctime', ic: '⏱', name: 'Pack ×10 de +15 s', desc: 'Diez ampliaciones de tiempo', qty: 10, price: 1200 }
+    { key: 'ctel', ic: '📞', name: 'Pack ×5 de Llamada', desc: 'Cinco llamadas a un amigo', qty: 5, price: 6500 },
+    { key: 'csh', ic: '🛡️', name: 'Pack ×10 de Escudo', desc: 'Diez escudos (racha a salvo)', qty: 10, price: 3500 },
+    { key: 'ctime', ic: '⏱', name: 'Pack ×10 de +15 s', desc: 'Diez ampliaciones de tiempo', qty: 10, price: 1200 },
+    { key: 'ctime', ic: '⏱', name: 'Pack ×30 de +15 s', desc: 'Treinta ampliaciones de tiempo', qty: 30, price: 3000 }
   ];
   // Cajas sorpresa: para fundir puntos rápido (dan uno de CADA comodín ×N)
   var BOXES = [
@@ -638,6 +645,7 @@
     if (q.cat) html += renderList30(q.cat);
     if (q.tema === 27) html += renderPsico27(q.cita);
     if (q.temas) html += '<div class="anstemas"><span class="exlab">📌 Útil para el temario</span>' + formatAnswer(q.temas) + '</div>';
+    if (q.biblio) html += '<div class="anscita"><span class="exlab">📚 Bibliografía ideal para este tema</span>' + formatAnswer(q.biblio) + '</div>';
     $('aText').innerHTML = html;
   }
   function hintExpl() { var h = $('tapHint'); h.textContent = '👆 Toca la tarjeta para ver la explicación'; h.classList.add('pulse'); }
