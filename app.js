@@ -64,7 +64,8 @@
     { key: 'caja6', ic: '🧰', name: 'Caja enorme', desc: 'Seis de cada comodín', qty: 6, price: 11000 },
     { key: 'caja12', ic: '🎒', name: 'Cofre', desc: 'Doce de cada comodín + 3000 🪙', qty: 12, coins: 3000, price: 20000 },
     { key: 'caja25', ic: '🏆', name: 'Cofre gigante', desc: 'Veinticinco de cada comodín + 8000 🪙', qty: 25, coins: 8000, price: 40000 },
-    { key: 'caja50', ic: '💎', name: 'Baúl legendario', desc: '¡Cincuenta de cada comodín + 20000 🪙!', qty: 50, coins: 20000, price: 85000 }
+    { key: 'caja50', ic: '💎', name: 'Baúl legendario', desc: '¡Cincuenta de cada comodín + 20000 🪙!', qty: 50, coins: 20000, price: 85000 },
+    { key: 'caja100', ic: '🌟', name: 'Baúl mítico', desc: '¡CIEN de cada comodín + 50000 🪙!', qty: 100, coins: 50000, price: 175000 }
   ];
   // Extras: efectos y mejoras
   var EXTRAS = [
@@ -104,7 +105,11 @@
     { key: 'tr_unicornio', ic: '🦄', name: 'Unicornio', price: 150000 },
     { key: 'tr_dragon', ic: '🐉', name: 'Dragón legendario', price: 300000 },
     { key: 'tr_ovni', ic: '🛸', name: 'Platillo cósmico', price: 500000 },
-    { key: 'tr_gato', ic: '🐈', name: 'Gato de la suerte', price: 800000 }
+    { key: 'tr_gato', ic: '🐈', name: 'Gato de la suerte', price: 800000 },
+    { key: 'tr_castillo', ic: '🏰', name: 'Castillo encantado', price: 1200000 },
+    { key: 'tr_volcan', ic: '🌋', name: 'Volcán en erupción', price: 2000000 },
+    { key: 'tr_moai', ic: '🗿', name: 'Estatua legendaria', price: 3500000 },
+    { key: 'tr_planeta', ic: '🪐', name: 'Planeta propio', price: 6000000 }
   ];
   // Temas estéticos. "clasico" es el de siempre (gratis). Los de degradado llevan "bgimg".
   var THEMES = [
@@ -122,7 +127,11 @@
     { key: 'amatista', ic: '🔮', name: 'Amatista (degradado)', price: 1300, bgimg: 'linear-gradient(160deg, #2b0f3a 0%, #4a1a6a 50%, #7b2ff7 100%)', vars: { panel:'#241033', panel2:'#301545', line:'#452a5e', ink:'#f2e9ff', soft:'#c3a9e0', muted:'#9077b0', azul:'#b18bff', 'azul-d':'#8b5fe0', verde:'#4fd6a0', 'verde-d':'#38a87d', rojo:'#ff6b9a', naranja:'#ffab5d', morado:'#d29bff', dorado:'#ffd24d' } },
     { key: 'marea', ic: '💧', name: 'Marea (degradado)', price: 1000, bgimg: 'linear-gradient(160deg, #43cea2 0%, #2b78c4 100%)', vars: { panel:'#f0fbf8', panel2:'#e0f4ee', line:'#c2e2d8', ink:'#0d2a2a', soft:'#3d6b66', muted:'#6f9a94', azul:'#0e8a9b', 'azul-d':'#0a6777', verde:'#12a578', 'verde-d':'#0d805c', rojo:'#e2585b', naranja:'#e08a3c', morado:'#5b7ac9', dorado:'#c8912f' } },
     { key: 'arcoiris', ic: '🌈', name: 'Arcoíris (degradado)', price: 1500, bgimg: 'linear-gradient(120deg, #f6d365 0%, #fda085 25%, #f78ca0 50%, #a18cd1 75%, #84fab0 100%)', vars: { panel:'#fffaf3', panel2:'#fff0e6', line:'#efd9c6', ink:'#33262e', soft:'#6f5a63', muted:'#9a8590', azul:'#c25ea0', 'azul-d':'#a04680', verde:'#48a06a', 'verde-d':'#367c50', rojo:'#e0596a', naranja:'#e08a3c', morado:'#8a6bd0', dorado:'#c8912f' } },
-    { key: 'cosmos', ic: '🪐', name: 'Cosmos (degradado)', price: 1400, bgimg: 'linear-gradient(160deg, #0b0f2a 0%, #1a1a4a 45%, #3a1c6a 100%)', vars: { panel:'#12163a', panel2:'#1a1f4d', line:'#2c2f66', ink:'#e9ecff', soft:'#aab0e0', muted:'#7d84b8', azul:'#6b8bff', 'azul-d':'#4960d6', verde:'#3fd6b0', 'verde-d':'#2fa88a', rojo:'#ff6b8f', naranja:'#ffb15c', morado:'#b78bff', dorado:'#ffd24d' } }
+    { key: 'cosmos', ic: '🪐', name: 'Cosmos (degradado)', price: 1400, bgimg: 'linear-gradient(160deg, #0b0f2a 0%, #1a1a4a 45%, #3a1c6a 100%)', vars: { panel:'#12163a', panel2:'#1a1f4d', line:'#2c2f66', ink:'#e9ecff', soft:'#aab0e0', muted:'#7d84b8', azul:'#6b8bff', 'azul-d':'#4960d6', verde:'#3fd6b0', 'verde-d':'#2fa88a', rojo:'#ff6b8f', naranja:'#ffb15c', morado:'#b78bff', dorado:'#ffd24d' } },
+    { key: 'miami', ic: '🌴', name: 'Neón Miami (degradado)', price: 2000, bgimg: 'linear-gradient(160deg, #12002f 0%, #4a0a6a 45%, #ff2e97 100%)', vars: { panel:'#241033', panel2:'#301545', line:'#452a5e', ink:'#f2e9ff', soft:'#c3a9e0', muted:'#9077b0', azul:'#b18bff', 'azul-d':'#8b5fe0', verde:'#4fd6a0', 'verde-d':'#38a87d', rojo:'#ff6b9a', naranja:'#ffab5d', morado:'#d29bff', dorado:'#ffd24d' } },
+    { key: 'oro', ic: '🏆', name: 'Oro líquido (degradado)', price: 2500, bgimg: 'linear-gradient(160deg, #f7971e 0%, #ffd200 100%)', vars: { panel:'#fff6f0', panel2:'#ffece1', line:'#f2cdbb', ink:'#3d2320', soft:'#7a5548', muted:'#a07d6e', azul:'#c25e3a', 'azul-d':'#a2482a', verde:'#4f9d6b', 'verde-d':'#3c7c53', rojo:'#d84b4b', naranja:'#e07a2e', morado:'#a05a8a', dorado:'#c8912f' } },
+    { key: 'menta', ic: '🍃', name: 'Menta glacial (degradado)', price: 2000, bgimg: 'linear-gradient(160deg, #a8ff78 0%, #78ffd6 100%)', vars: { panel:'#f0fbf8', panel2:'#e0f4ee', line:'#c2e2d8', ink:'#0d2a2a', soft:'#3d6b66', muted:'#6f9a94', azul:'#0e8a9b', 'azul-d':'#0a6777', verde:'#12a578', 'verde-d':'#0d805c', rojo:'#e2585b', naranja:'#e08a3c', morado:'#5b7ac9', dorado:'#c8912f' } },
+    { key: 'nebulosa', ic: '🌌', name: 'Nebulosa (degradado)', price: 3000, bgimg: 'linear-gradient(160deg, #3a0ca3 0%, #7209b7 50%, #f72585 100%)', vars: { panel:'#12163a', panel2:'#1a1f4d', line:'#2c2f66', ink:'#e9ecff', soft:'#aab0e0', muted:'#7d84b8', azul:'#6b8bff', 'azul-d':'#4960d6', verde:'#3fd6b0', 'verde-d':'#2fa88a', rojo:'#ff6b8f', naranja:'#ffb15c', morado:'#b78bff', dorado:'#ffd24d' } }
   ];
 
   function $(id) { return document.getElementById(id); }
