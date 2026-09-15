@@ -423,6 +423,52 @@
   // en el orden de autoría (progresivo), sin barajar ni recortar, ignorando los toggles.
   var SEQTEMAS = new Set();
   function poolIsSeq(pool) { return pool.length > 0 && pool.every(function (q) { return SEQTEMAS.has(q.tema); }); }
+  // Temas "por goteo" (drip:true): solo ~6 normas activas a la vez; al DOMINAR una (acertar
+  // RÁPIDO y MASTER veces seguidas) entra la siguiente y se retira la dominada. Progreso persistente.
+  var DRIPTEMAS = new Set(), DRIP = { W: 6, MASTER: 3, FAST: 9000 };
+  var dripMastered = {}, dripStreak = {};
+  function loadDrip() { try { var d = JSON.parse(localStorage.getItem('dripV1') || '{}'); dripMastered = d.m || {}; dripStreak = d.s || {}; } catch (e) { dripMastered = {}; dripStreak = {}; } }
+  function saveDrip() { try { localStorage.setItem('dripV1', JSON.stringify({ m: dripMastered, s: dripStreak })); } catch (e) {} }
+  function poolIsDrip(pool) { return pool.length > 0 && pool.every(function (q) { return q.norma && DRIPTEMAS.has(q.tema); }); }
+  function dripAllNorms(pool) { var ord = {}, arr = []; pool.forEach(function (q) { if (!(q.norma in ord)) { ord[q.norma] = q.nord; arr.push(q.norma); } }); arr.sort(function (a, b) { return ord[a] - ord[b]; }); return arr; }
+  function dripActive(pool) { var all = dripAllNorms(pool); var act = all.filter(function (n) { return !dripMastered[n]; }).slice(0, DRIP.W); return act.length ? act : all; }
+  function dripCount() { var n = 0; for (var k in dripMastered) if (dripMastered[k]) n++; return n; }
+  function dripOptions(correct, activeLabels, allLabels) {
+    var others = activeLabels.filter(function (x) { return x !== correct; });
+    if (others.length < 3) others = others.concat(allLabels.filter(function (x) { return x !== correct && others.indexOf(x) < 0; }));
+    var ds = shuffle(others).slice(0, 3), opts = shuffle([correct].concat(ds));
+    return { opciones: opts, correcta: opts.indexOf(correct) };
+  }
+  function dripClone(q, active, all) { var o = dripOptions(q.norma, active, all); return { id: q.id, tema: q.tema, q: q.q, a: q.a, norma: q.norma, nord: q.nord, cita: q.cita, opciones: o.opciones, correcta: o.correcta }; }
+  function buildDrip(pool) {
+    var active = dripActive(pool), all = dripAllNorms(pool), actSet = {};
+    active.forEach(function (n) { actSet[n] = 1; });
+    return shuffle(pool.filter(function (q) { return actSet[q.norma]; }).map(function (q) { return dripClone(q, active, all); }));
+  }
+  function dripOnAnswer(q, idx) {
+    if (!q.norma || !DRIPTEMAS.has(q.tema)) return;
+    var fast = (Date.now() - (st.cardStart || Date.now())) <= DRIP.FAST, correct = (idx === q.correcta), n = q.norma;
+    if (dripMastered[n]) { saveDrip(); return; }
+    if (correct && fast) { dripStreak[n] = (dripStreak[n] || 0) + 1; if (dripStreak[n] >= DRIP.MASTER) { dripMastered[n] = true; dripUnlock(poolSeleccion(), n); } }
+    else { dripStreak[n] = 0; }
+    saveDrip();
+  }
+  function dripUnlock(pool, masteredN) {
+    var all = dripAllNorms(pool), active = dripActive(pool), inMazo = {};
+    st.mazo.forEach(function (x) { inMazo[x.norma] = 1; });
+    for (var j = st.mazo.length - 1; j > st.i; j--) if (st.mazo[j].norma === masteredN) st.mazo.splice(j, 1);   // retira las de la dominada
+    var next = null;
+    for (var i = 0; i < all.length; i++) { if (!dripMastered[all[i]] && !inMazo[all[i]]) { next = all[i]; break; } }
+    var msg = '🎓 ¡Dominada ' + masteredN + '! (' + dripCount() + '/' + all.length + ')';
+    if (next) {
+      var nq = pool.filter(function (q) { return q.norma === next; }).map(function (q) { return dripClone(q, active, all); });
+      shuffle(nq).forEach(function (c, k) { st.mazo.splice(st.i + 1 + k, 0, c); });
+      msg += ' · entra: ' + next;
+    } else { msg += ' · ¡las llevas todas!'; }
+    $('pgTot').textContent = st.mazo.length;
+    var el = $('infoMsg'); el.textContent = msg; el.classList.remove('hidden'); sfx('bonus');
+  }
+  function dripReset() { dripMastered = {}; dripStreak = {}; saveDrip(); }
   function ordenarMazo(pool) {
     if (poolIsSeq(pool)) return pool.slice();   // orden progresivo (saberes)
     if (st.smart) {
@@ -443,6 +489,7 @@
   // Compone el mazo de la sesión: reserva ~20% para preguntas ya contestadas (dominadas)
   // para ir repasándolas poco a poco, y el 80% con la prioridad normal (falladas + sin ver).
   function buildDeck(pool) {
+    if (poolIsDrip(pool)) return buildDrip(pool);  // goteo: solo las ~6 normas activas
     var ordered = ordenarMazo(pool);
     if (poolIsSeq(pool)) return ordered;           // saberes: mazo completo en orden, sin recorte
     var size = st.size;
@@ -749,9 +796,10 @@
       st.answered = true; stopTimer(); if (btn) btn.classList.add('picked');
       revealOptions(q, idx); renderBack(q, idx); disableLifes();
       if (idx === q.correcta) onCorrect(q); else onWrong(q, false);
+      dripOnAnswer(q, idx);
       if (esDura(q, idx, false)) scheduleRepeat(q);
       hintExpl();
-    } else { revealOptions(q, idx); renderBack(q, idx); }
+    } else { revealOptions(q, idx); renderBack(q, idx); dripOnAnswer(q, idx); }
   }
   function revealOptions(q, chosen) {
     var btns = $('optsWrap').children;
@@ -830,7 +878,7 @@
     st.answered = true;
     var btns = $('optsWrap').children;
     for (var i = 0; i < btns.length; i++) { var b = btns[i]; b.classList.add('lock'); if (parseInt(b.dataset.orig, 10) === q.correcta) b.classList.add('correct'); else b.classList.add('dim'); }
-    renderBack(q, null); disableLifes(); onWrong(q, true); scheduleRepeat(q); hintExpl();
+    renderBack(q, null); disableLifes(); onWrong(q, true); dripOnAnswer(q, -1); scheduleRepeat(q); hintExpl();
   }
   function grantBonus() {
     var keys = ['c5050', 'cpub', 'ctel', 'cx2', 'csh', 'ctime'];
@@ -946,6 +994,7 @@
     $('stKnow').textContent = know; $('stDunno').textContent = dunno; $('stTest').textContent = testTot ? (testOk + '/' + testTot) : '—';
     $('resSub').textContent = (evaluadas ? ('Sabías ' + know + ' de ' + evaluadas + ' tarjetas · progreso guardado') : 'Progreso guardado') + (st.repInjected ? ' · 🔁 ' + st.repInjected + ' repasos' : '');
     $('resTemas').textContent = Array.from(st.seleccion).sort(function (a, b) { return a - b; }).map(function (n) { return n === 0 ? 'REPASO' : 'T' + n; }).join(' · ') + ' · ' + total + ' tarjetas';
+    if (Array.from(st.seleccion).some(function (n) { return DRIPTEMAS.has(n); })) { var allN = dripAllNorms(poolSeleccion()); $('resSub').textContent = '🎯 Goteo · dominadas ' + dripCount() + '/' + allN.length + ' normas · ahora aprendiendo ' + dripActive(poolSeleccion()).length; }
     if (st.juegoEf) {
       show('gameScore'); $('resScore').textContent = st.score; $('resStreak').textContent = st.best; $('resShield').textContent = st.shieldUsed;
       var acc = testTot ? testOk / testTot : 0, badge = '';
@@ -1012,8 +1061,8 @@
       if (qa !== qb) return qa - qb;   // los mazos ⚡ (Repaso rápido y Glosario) van primero
       return a.n - b.n;
     });
-    TEMAS.forEach(function (t) { if (t.seq) SEQTEMAS.add(t.n); });   // temas secuenciales (saberes)
-    loadStats(); loadDisc(); loadFav(); loadInv(); loadCoins(); loadCosmet(); loadCfg(); applyEink(); applyTheme();
+    TEMAS.forEach(function (t) { if (t.seq) SEQTEMAS.add(t.n); if (t.drip) DRIPTEMAS.add(t.n); });   // secuenciales (saberes) y por goteo (legislación)
+    loadStats(); loadDisc(); loadFav(); loadInv(); loadCoins(); loadCosmet(); loadCfg(); loadDrip(); applyEink(); applyTheme();
     document.addEventListener('pointerdown', function once() { audio(); document.removeEventListener('pointerdown', once); });
     bindHome(); bindStudy(); bindResults(); renderTemas(); updateCoinsUI();
   }
