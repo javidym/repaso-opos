@@ -464,7 +464,15 @@
     return out;
   }
   function buildDrip(pool) { st.dripN = dripSessionN(); return dripTour(pool, st.dripN); }
-  function dripRemoveFuture(n) { for (var j = st.mazo.length - 1; j > st.i; j--) if (st.mazo[j].norma === n) st.mazo.splice(j, 1); $('pgTot').textContent = st.mazo.length; }
+  // al dominar una norma se dejan de preguntar SUS tarjetas… salvo 1-2 que se conservan como control sorpresa más adelante
+  function dripThinFuture(n, keep) {
+    var futures = [];
+    for (var j = st.i + 1; j < st.mazo.length; j++) if (st.mazo[j].norma === n) futures.push(st.mazo[j]);
+    if (futures.length <= keep) return;
+    var keepObjs = shuffle(futures).slice(0, keep);
+    st.mazo = st.mazo.filter(function (c, idx) { return idx <= st.i || c.norma !== n || keepObjs.indexOf(c) >= 0; });
+    $('pgTot').textContent = st.mazo.length;
+  }
   function dripToast(txt, bad) { var el = $('infoMsg'); el.textContent = txt; el.classList.remove('hidden'); sfx(bad ? 'bad' : 'bonus'); }
   function dripOnAnswer(q, idx) {
     if (!q.norma || !DRIPTEMAS.has(q.tema)) return;
@@ -476,7 +484,7 @@
     }
     if (correct) {
       dripStreak[n] = (dripStreak[n] || 0) + 1;              // aciertos acumulados (en distintos momentos)
-      if (dripStreak[n] >= DRIP.MASTER) { dripMastered[n] = true; saveDrip(); dripRemoveFuture(n); dripToast('🎓 ¡Controlas ' + n + '! (' + dripCount() + '/' + all.length + ') · dejo de preguntártela'); return; }
+      if (dripStreak[n] >= DRIP.MASTER) { dripMastered[n] = true; saveDrip(); dripThinFuture(n, Math.random() < 0.5 ? 1 : 2); dripToast('🎓 ¡Controlas ' + n + '! (' + dripCount() + '/' + all.length + ') · casi no la pregunto (algún repaso suelto para que no te confíes)'); return; }
     }
     saveDrip();                                             // fallo en no-dominada: no resta (cuenta por aciertos acumulados)
   }
