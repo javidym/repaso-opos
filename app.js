@@ -459,8 +459,13 @@
     }
     return out;
   }
-  function buildDrip(pool) { return dripInterleave(pool, dripRotation(pool), dripKnown(pool), dripAllNorms(pool), DRIP.SESSION); }
-  function dripRebuildFuture() { var pool = poolSeleccion(); st.mazo = st.mazo.slice(0, st.i + 1).concat(buildDrip(pool)); $('pgTot').textContent = st.mazo.length; }
+  function dripSessionN() { return st.size > 0 ? st.size : 120; }   // respeta el tamaño de sesión elegido (15/30/50/100/200/Todas)
+  function buildDrip(pool) { st.dripN = dripSessionN(); return dripInterleave(pool, dripRotation(pool), dripKnown(pool), dripAllNorms(pool), st.dripN); }
+  function dripRebuildFuture() {
+    var pool = poolSeleccion(), rem = Math.max(8, (st.dripN || dripSessionN()) - (st.i + 1));   // mantiene el total cerca del tamaño elegido
+    st.mazo = st.mazo.slice(0, st.i + 1).concat(dripInterleave(pool, dripRotation(pool), dripKnown(pool), dripAllNorms(pool), rem));
+    $('pgTot').textContent = st.mazo.length;
+  }
   function dripToast(txt, bad) { var el = $('infoMsg'); el.textContent = txt; el.classList.remove('hidden'); sfx(bad ? 'bad' : 'bonus'); }
   function dripOnAnswer(q, idx) {
     if (!q.norma || !DRIPTEMAS.has(q.tema)) return;
