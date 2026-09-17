@@ -425,7 +425,7 @@
   function poolIsSeq(pool) { return pool.length > 0 && pool.every(function (q) { return SEQTEMAS.has(q.tema); }); }
   // Temas "por goteo" (drip:true): solo ~6 normas activas a la vez; al DOMINAR una (acertar
   // RÁPIDO y MASTER veces seguidas) entra la siguiente y se retira la dominada. Progreso persistente.
-  var DRIPTEMAS = new Set(), DRIP = { W: 6, MASTER: 3, FAST: 9000, REVIEW: 0.22 };
+  var DRIPTEMAS = new Set(), DRIP = { W: 8, MASTER: 3, FAST: 9000, REVIEW: 0.22 };
   var dripMastered = {}, dripStreak = {};
   function loadDrip() { try { var d = JSON.parse(localStorage.getItem('dripV1') || '{}'); dripMastered = d.m || {}; dripStreak = d.s || {}; } catch (e) { dripMastered = {}; dripStreak = {}; } }
   function saveDrip() { try { localStorage.setItem('dripV1', JSON.stringify({ m: dripMastered, s: dripStreak })); } catch (e) {} }
