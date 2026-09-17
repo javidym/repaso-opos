@@ -423,61 +423,60 @@
   // en el orden de autoría (progresivo), sin barajar ni recortar, ignorando los toggles.
   var SEQTEMAS = new Set();
   function poolIsSeq(pool) { return pool.length > 0 && pool.every(function (q) { return SEQTEMAS.has(q.tema); }); }
-  // Temas "por goteo" (drip:true): solo ~6 normas activas a la vez; al DOMINAR una (acertar
-  // RÁPIDO y MASTER veces seguidas) entra la siguiente y se retira la dominada. Progreso persistente.
-  var DRIPTEMAS = new Set(), DRIP = { W: 8, MASTER: 3, REVIEW_NORMS: 2, SESSION: 60 };
+  // Temas "por goteo" (drip:true): cada sesión hace un RECORRIDO por TODA la normativa, con la
+  // intensidad marcada por el tamaño elegido (100 → todo ligero; 200 → todo más a fondo). Las
+  // normas NO dominadas (y en especial las ~8 en foco) pesan más; al DOMINAR una (MASTER aciertos
+  // acumulados) se deja de preguntar. Progreso persistente.
+  var DRIPTEMAS = new Set(), DRIP = { W: 8, MASTER: 3, FOCUS_W: 4 };
   var dripMastered = {}, dripStreak = {};   // dripStreak[n] = nº de ACIERTOS ACUMULADOS (en distintos momentos) de la norma n
   function loadDrip() { try { var d = JSON.parse(localStorage.getItem('dripV1') || '{}'); dripMastered = d.m || {}; dripStreak = d.s || {}; } catch (e) { dripMastered = {}; dripStreak = {}; } }
   function saveDrip() { try { localStorage.setItem('dripV1', JSON.stringify({ m: dripMastered, s: dripStreak })); } catch (e) {} }
   function poolIsDrip(pool) { return pool.length > 0 && pool.every(function (q) { return q.norma && DRIPTEMAS.has(q.tema); }); }
   function dripAllNorms(pool) { var ord = {}, arr = []; pool.forEach(function (q) { if (!(q.norma in ord)) { ord[q.norma] = q.nord; arr.push(q.norma); } }); arr.sort(function (a, b) { return ord[a] - ord[b]; }); return arr; }
-  function dripActive(pool) { var all = dripAllNorms(pool); var act = all.filter(function (n) { return !dripMastered[n]; }).slice(0, DRIP.W); return act.length ? act : all; }
   function dripMasteredList() { var m = []; for (var k in dripMastered) if (dripMastered[k]) m.push(k); return m; }
   function dripCount() { return dripMasteredList().length; }
-  function dripKnown(pool) { return dripActive(pool).concat(dripMasteredList()); }   // opciones = normas ya vistas
-  function dripRotation(pool) { return dripActive(pool).concat(shuffle(dripMasteredList()).slice(0, DRIP.REVIEW_NORMS)); }   // ~8 activas + ~2 de repaso
-  function dripOptions(correct, primary, allLabels) {
-    var others = primary.filter(function (x) { return x !== correct; });
-    if (others.length < 3) others = others.concat(allLabels.filter(function (x) { return x !== correct && others.indexOf(x) < 0; }));
+  function dripActive(pool) { return dripAllNorms(pool).filter(function (n) { return !dripMastered[n]; }); }   // no dominadas
+  function dripOptions(correct, allLabels) {
+    var others = allLabels.filter(function (x) { return x !== correct; });
     var ds = shuffle(others).slice(0, 3), opts = shuffle([correct].concat(ds));
     return { opciones: opts, correcta: opts.indexOf(correct) };
   }
-  function dripClone(q, known, all) { var o = dripOptions(q.norma, known, all); return { id: q.id, tema: q.tema, q: q.q, a: q.a, norma: q.norma, nord: q.nord, cita: q.cita, opciones: o.opciones, correcta: o.correcta }; }
-  // reparto ROUND-ROBIN: nunca dos tarjetas seguidas de la misma norma; cada norma, una casuística distinta cada vez
-  function dripInterleave(pool, rot, known, all, count) {
-    if (!rot.length) rot = dripAllNorms(pool).slice(0, DRIP.W);
-    var byNorm = {}, idx = {};
-    rot.forEach(function (n) { byNorm[n] = shuffle(pool.filter(function (q) { return q.norma === n; })); idx[n] = 0; });
-    var order = shuffle(rot.slice()), out = [];
-    while (out.length < count) {
-      var added = false;
-      for (var k = 0; k < order.length && out.length < count; k++) {
-        var n = order[k], qs = byNorm[n]; if (!qs.length) continue;
-        out.push(dripClone(qs[idx[n] % qs.length], known, all)); idx[n]++; added = true;
-      }
-      if (!added) break;
+  function dripClone(q, all) { var o = dripOptions(q.norma, all); return { id: q.id, tema: q.tema, q: q.q, a: q.a, norma: q.norma, nord: q.nord, cita: q.cita, opciones: o.opciones, correcta: o.correcta }; }
+  function dripSessionN() { return st.size > 0 ? st.size : 120; }   // respeta el tamaño de sesión elegido (15/30/50/100/200/Todas)
+  // RECORRIDO PONDERADO: N tarjetas que tocan TODAS las normas; foco (~8 no dominadas) con más peso,
+  // resto y dominadas ligero (repaso). Reparto voraz: no salen dos seguidas de la misma norma.
+  function dripTour(pool, N) {
+    var all = dripAllNorms(pool); if (!all.length) return [];
+    var nonMast = all.filter(function (n) { return !dripMastered[n]; }), foco = {};
+    nonMast.slice(0, DRIP.W).forEach(function (n) { foco[n] = 1; });
+    var w = {}, wsum = 0; all.forEach(function (n) { w[n] = foco[n] ? DRIP.FOCUS_W : 1; wsum += w[n]; });
+    var cnt = {}; all.forEach(function (n) { cnt[n] = Math.max(1, Math.round(N * w[n] / wsum)); });
+    var queues = {}, qi = {}; all.forEach(function (n) { queues[n] = shuffle(pool.filter(function (q) { return q.norma === n; })); qi[n] = 0; });
+    var out = [], last = null, guard = 0;
+    while (out.length < N && guard < N * 10) {
+      guard++;
+      var best = null, bestc = 0;
+      all.forEach(function (n) { if (cnt[n] > 0 && n !== last && queues[n].length && cnt[n] > bestc) { best = n; bestc = cnt[n]; } });
+      if (best === null) all.forEach(function (n) { if (best === null && cnt[n] > 0 && queues[n].length) best = n; });
+      if (best === null) break;
+      out.push(dripClone(queues[best][qi[best] % queues[best].length], all)); qi[best]++; cnt[best]--; last = best;
     }
     return out;
   }
-  function dripSessionN() { return st.size > 0 ? st.size : 120; }   // respeta el tamaño de sesión elegido (15/30/50/100/200/Todas)
-  function buildDrip(pool) { st.dripN = dripSessionN(); return dripInterleave(pool, dripRotation(pool), dripKnown(pool), dripAllNorms(pool), st.dripN); }
-  function dripRebuildFuture() {
-    var pool = poolSeleccion(), rem = Math.max(8, (st.dripN || dripSessionN()) - (st.i + 1));   // mantiene el total cerca del tamaño elegido
-    st.mazo = st.mazo.slice(0, st.i + 1).concat(dripInterleave(pool, dripRotation(pool), dripKnown(pool), dripAllNorms(pool), rem));
-    $('pgTot').textContent = st.mazo.length;
-  }
+  function buildDrip(pool) { st.dripN = dripSessionN(); return dripTour(pool, st.dripN); }
+  function dripRemoveFuture(n) { for (var j = st.mazo.length - 1; j > st.i; j--) if (st.mazo[j].norma === n) st.mazo.splice(j, 1); $('pgTot').textContent = st.mazo.length; }
   function dripToast(txt, bad) { var el = $('infoMsg'); el.textContent = txt; el.classList.remove('hidden'); sfx(bad ? 'bad' : 'bonus'); }
   function dripOnAnswer(q, idx) {
     if (!q.norma || !DRIPTEMAS.has(q.tema)) return;
     var correct = (idx === q.correcta), n = q.norma, all = dripAllNorms(poolSeleccion());
     if (dripMastered[n]) {                                   // REPASO de una dominada: si la fallas, vuelve a la rotación
-      if (!correct) { delete dripMastered[n]; dripStreak[n] = 0; saveDrip(); dripRebuildFuture(); dripToast('🔁 ' + n + ' vuelve a la rotación (repásala)', true); }
+      if (!correct) { delete dripMastered[n]; dripStreak[n] = 0; saveDrip(); dripToast('🔁 ' + n + ' vuelve a repaso intenso (la fallaste)', true); }
       else saveDrip();
       return;
     }
     if (correct) {
       dripStreak[n] = (dripStreak[n] || 0) + 1;              // aciertos acumulados (en distintos momentos)
-      if (dripStreak[n] >= DRIP.MASTER) { dripMastered[n] = true; saveDrip(); dripRebuildFuture(); dripToast('🎓 ¡Controlas ' + n + '! (' + dripCount() + '/' + all.length + ') · dejo de preguntártela y entra otra'); return; }
+      if (dripStreak[n] >= DRIP.MASTER) { dripMastered[n] = true; saveDrip(); dripRemoveFuture(n); dripToast('🎓 ¡Controlas ' + n + '! (' + dripCount() + '/' + all.length + ') · dejo de preguntártela'); return; }
     }
     saveDrip();                                             // fallo en no-dominada: no resta (cuenta por aciertos acumulados)
   }
@@ -1007,7 +1006,7 @@
     $('stKnow').textContent = know; $('stDunno').textContent = dunno; $('stTest').textContent = testTot ? (testOk + '/' + testTot) : '—';
     $('resSub').textContent = (evaluadas ? ('Sabías ' + know + ' de ' + evaluadas + ' tarjetas · progreso guardado') : 'Progreso guardado') + (st.repInjected ? ' · 🔁 ' + st.repInjected + ' repasos' : '');
     $('resTemas').textContent = Array.from(st.seleccion).sort(function (a, b) { return a - b; }).map(function (n) { return n === 0 ? 'REPASO' : 'T' + n; }).join(' · ') + ' · ' + total + ' tarjetas';
-    if (Array.from(st.seleccion).some(function (n) { return DRIPTEMAS.has(n); })) { var allN = dripAllNorms(poolSeleccion()); $('resSub').textContent = '🎯 Goteo · dominadas ' + dripCount() + '/' + allN.length + ' normas · ahora aprendiendo ' + dripActive(poolSeleccion()).length; }
+    if (Array.from(st.seleccion).some(function (n) { return DRIPTEMAS.has(n); })) { var allN = dripAllNorms(poolSeleccion()); $('resSub').textContent = '🎯 Goteo · dominadas ' + dripCount() + '/' + allN.length + ' normas · el test recorre todas (las no dominadas salen más)'; }
     if (st.juegoEf) {
       show('gameScore'); $('resScore').textContent = st.score; $('resStreak').textContent = st.best; $('resShield').textContent = st.shieldUsed;
       var acc = testTot ? testOk / testTot : 0, badge = '';
