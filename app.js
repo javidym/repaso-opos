@@ -719,7 +719,7 @@
     if (q.cita) html += '<div class="anscita"><span class="exlab">📚 Cita (APA)</span>' + formatAnswer(q.cita) + '</div>';
     if (opc && chosen != null && chosen !== q.correcta) html += '<div class="anschosen">Marcaste la <b>' + LETRAS[st.order.indexOf(chosen)] + '</b> («' + esc(q.opciones[chosen]) + '»): no es la válida.</div>';
     if (q.cat) html += renderList30(q.cat);
-    if (q.tema === 27) html += renderPsico27(q.cita);
+    if (q.tema === 27 || q.tema === 64) html += renderPsico27(q.cita);
     if (q.temas) html += '<div class="anstemas"><span class="exlab">📌 Útil para el temario</span>' + formatAnswer(q.temas) + '</div>';
     if (q.biblio) html += '<div class="anscita"><span class="exlab">📚 Bibliografía ideal para este tema</span>' + formatAnswer(q.biblio) + '</div>';
     $('aText').innerHTML = html;
